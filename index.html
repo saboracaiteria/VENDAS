@@ -15,17 +15,12 @@
             --success-color: #28a745;
             --danger-color: #dc3545;
         }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             margin: 0;
             background-color: var(--background-color);
             color: var(--text-color);
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
         }
-
         .container {
             width: 90%;
             max-width: 1200px;
@@ -34,7 +29,6 @@
             grid-template-columns: 2fr 1fr;
             gap: 30px;
         }
-
         header {
             grid-column: 1 / -1;
             background-color: var(--surface-color);
@@ -43,34 +37,24 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             border-left: 5px solid var(--primary-color);
         }
-
-        header h1 {
-            margin: 0;
-            color: var(--primary-color);
+        header h1 { margin: 0; color: var(--primary-color); }
+        #company-info { font-size: 0.9em; color: var(--secondary-color); }
+        main { display: flex; flex-direction: column; }
+        .search-container { margin-bottom: 20px; }
+        #search-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 1em;
+            box-sizing: border-box;
         }
-        
-        #company-info {
-            font-size: 0.9em;
-            color: var(--secondary-color);
-        }
-
-        main {
-            display: flex;
-            flex-direction: column;
-        }
-
-        aside {
-            position: sticky;
-            top: 20px;
-            height: fit-content;
-        }
-
+        aside { position: sticky; top: 20px; height: fit-content; }
         #product-list {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             gap: 20px;
         }
-
         .product-card {
             background-color: var(--surface-color);
             border: 1px solid var(--border-color);
@@ -82,24 +66,9 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             transition: transform 0.2s, box-shadow 0.2s;
         }
-        
-        .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .product-description {
-            font-weight: bold;
-            margin-bottom: 10px;
-            flex-grow: 1;
-        }
-
-        .product-price {
-            font-size: 1.2em;
-            color: var(--success-color);
-            margin-bottom: 15px;
-        }
-
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .product-description { font-weight: bold; margin-bottom: 10px; flex-grow: 1; }
+        .product-price { font-size: 1.2em; color: var(--success-color); margin-bottom: 15px; }
         .add-to-cart-btn {
             background-color: var(--primary-color);
             color: white;
@@ -110,11 +79,7 @@
             font-weight: bold;
             transition: background-color 0.2s;
         }
-
-        .add-to-cart-btn:hover {
-            background-color: #0056b3;
-        }
-
+        .add-to-cart-btn:hover { background-color: #0056b3; }
         #cart {
             background-color: var(--surface-color);
             border: 1px solid var(--border-color);
@@ -122,19 +87,8 @@
             padding: 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
-        #cart h2 {
-            margin-top: 0;
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 10px;
-        }
-        
-        #cart-items {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
+        #cart h2 { margin-top: 0; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
+        #cart-items { list-style: none; padding: 0; margin: 0; max-height: 400px; overflow-y: auto; }
         .cart-item {
             display: flex;
             justify-content: space-between;
@@ -143,20 +97,8 @@
             border-bottom: 1px solid var(--border-color);
             font-size: 0.9em;
         }
-
-        .cart-item:last-child {
-            border-bottom: none;
-        }
-        
-        .cart-item-details {
-            flex-grow: 1;
-        }
-        
-        .cart-item-controls {
-            display: flex;
-            align-items: center;
-        }
-
+        .cart-item-details { flex-grow: 1; margin-right: 10px; }
+        .cart-item-controls { display: flex; align-items: center; }
         .quantity-btn, .remove-btn {
             background: none;
             border: 1px solid var(--border-color);
@@ -168,39 +110,35 @@
             margin: 0 5px;
             font-weight: bold;
         }
-        
-        .remove-btn {
-            color: var(--danger-color);
-            border-color: var(--danger-color);
-        }
-
-        #cart-total {
-            margin-top: 20px;
-            text-align: right;
-            font-size: 1.5em;
+        .remove-btn { color: var(--danger-color); border-color: var(--danger-color); }
+        #cart-total { margin-top: 20px; text-align: right; font-size: 1.5em; font-weight: bold; }
+        #print-cart-btn {
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 5px;
+            cursor: pointer;
             font-weight: bold;
+            width: 100%;
+            margin-top: 15px;
+            font-size: 1em;
         }
-
-        #loading, #error {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 50px;
-            font-size: 1.2em;
-        }
-        
+        #print-cart-btn:hover { background-color: #218838; }
+        #loading { text-align: center; padding: 20px; font-size: 1.2em; }
         #error {
-            color: var(--danger-color);
+            text-align: center;
+            padding: 20px;
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            display: none;
+            word-wrap: break-word;
         }
-
-        /* Responsive Design */
         @media (max-width: 900px) {
-            .container {
-                grid-template-columns: 1fr;
-            }
-            aside {
-                position: static;
-                margin-top: 30px;
-            }
+            .container { grid-template-columns: 1fr; }
+            aside { position: static; margin-top: 30px; }
         }
     </style>
 </head>
@@ -209,24 +147,24 @@
     <div class="container">
         <header>
             <h1>Sistema de Vendas</h1>
-            <div id="company-info">Carregando informações da empresa...</div>
+            <div id="company-info">Carregando...</div>
         </header>
 
         <main>
-            <div id="product-list">
-                </div>
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Buscar produtos por nome...">
+            </div>
+            <div id="product-list"></div>
             <div id="loading">Carregando produtos...</div>
-            <div id="error" style="display: none;"></div>
+            <div id="error"></div>
         </main>
 
         <aside>
             <div id="cart">
                 <h2>Carrinho</h2>
-                <ul id="cart-items">
-                    </ul>
-                <div id="cart-total">
-                    Total: <strong>R$ 0,00</strong>
-                </div>
+                <ul id="cart-items"></ul>
+                <div id="cart-total">Total: <strong>R$ 0,00</strong></div>
+                <button id="print-cart-btn">Imprimir Pedido</button>
             </div>
         </aside>
     </div>
@@ -239,189 +177,152 @@
             const companyInfoElement = document.getElementById('company-info');
             const loadingElement = document.getElementById('loading');
             const errorElement = document.getElementById('error');
+            const searchInputElement = document.getElementById('search-input');
+            const printCartBtn = document.getElementById('print-cart-btn');
 
             let cart = [];
+            let allProducts = [];
 
-            // Função para formatar moeda
-            const formatCurrency = (value) => {
-                return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            // --- FUNÇÃO DE DIAGNÓSTICO MELHORADA ---
+            const showError = (message, details = '') => {
+                loadingElement.style.display = 'none';
+                productListElement.innerHTML = '';
+                errorElement.innerHTML = `<strong>Ocorreu um erro:</strong><br>${message}<br><small>${details}</small>`;
+                errorElement.style.display = 'block';
+                console.error(message, details);
             };
 
-            // Função para analisar o arquivo CSV
             const parseCSV = (csvText) => {
-                const lines = csvText.trim().split('\n');
-                const products = [];
-                
-                // Extrair informações da empresa do cabeçalho
-                const companyName = lines.find(line => line.includes('LOURENCO E SILVA'))?.split(',')[2].replace(/"/g, '').trim() || 'Nome da Empresa';
-                const cnpj = lines.find(line => line.includes('CNPJ'))?.split(',')[1].replace(/"/g, '').trim() || 'CNPJ não encontrado';
-                companyInfoElement.innerText = `${companyName} - ${cnpj}`;
+                try {
+                    const lines = csvText.trim().replace(/\r/g, '').split('\n');
+                    const products = [];
 
-                let productStartIndex = lines.findIndex(line => line.includes('Descricao,Ncm.No.'));
-                if (productStartIndex === -1) return [];
+                    const companyName = lines.find(line => line.includes('LOURENCO E SILVA'))?.split(',')[2]?.replace(/"/g, '').trim() || 'Nome da Empresa';
+                    const cnpj = lines.find(line => line.includes('CNPJ'))?.split(',')[1]?.replace(/"/g, '').trim() || 'CNPJ não encontrado';
+                    companyInfoElement.innerText = `${companyName} - ${cnpj}`;
 
-                for (let i = productStartIndex + 1; i < lines.length; i++) {
-                    const line = lines[i];
-                    // Procura por linhas que iniciam um produto (padrão: "5xxxx,...")
-                    const productStartMatch = line.match(/^"(\d{5}),(.+)"/);
+                    let productStartIndex = lines.findIndex(line => line.includes('Descricao,Ncm.No.'));
+                    if (productStartIndex === -1) {
+                        throw new Error("A linha de cabeçalho 'Descricao,Ncm.No.' não foi encontrada no CSV.");
+                    }
 
-                    if (productStartMatch && i + 1 < lines.length) {
-                        const nextLine = lines[i + 1];
-                        // A linha seguinte deve conter o preço no formato ,"xx,xx"
-                        const priceMatch = nextLine.match(/,""(\d+,\d+)"""$/);
+                    for (let i = productStartIndex + 1; i < lines.length; i++) {
+                        const line = lines[i];
+                        if (!line || line.trim() === '""' || line.trim() === '') continue;
 
-                        if (priceMatch) {
-                            const id = productStartMatch[1];
-                            let description = productStartMatch[2].split(',').slice(2).join(',').trim().replace(/"/g, '');
-                            const price = parseFloat(priceMatch[1].replace(',', '.'));
+                        const productStartMatch = line.match(/^"(\d{5}),(.+)/);
+                        if (productStartMatch && i + 1 < lines.length) {
+                            const nextLine = lines[i + 1];
+                            const priceMatch = nextLine.match(/,""(\d+,\d+)"""$/);
 
-                            // Junta linhas de descrição adicionais até o próximo produto
-                            let j = i + 2;
-                            while(j < lines.length && !lines[j].match(/^"(\d{5},/)) {
-                                const extraDesc = lines[j].replace(/,/g, ' ').replace(/"/g, '').trim();
-                                if (extraDesc.length > 0 && isNaN(extraDesc[0])) {
-                                    description += ' ' + extraDesc;
+                            if (priceMatch) {
+                                const id = productStartMatch[1];
+                                let description = productStartMatch[2].split(',').slice(2).join(',').trim().replace(/"/g, '');
+                                const price = parseFloat(priceMatch[1].replace(',', '.'));
+                                
+                                let j = i + 2;
+                                while(j < lines.length && !lines[j].match(/^"(\d{5},/)) {
+                                    const extraDesc = lines[j].replace(/,/g, ' ').replace(/"/g, '').trim();
+                                    if (extraDesc.length > 0 && isNaN(extraDesc[0])) {
+                                        description += ' ' + extraDesc;
+                                    }
+                                    j++;
                                 }
-                                j++;
-                            }
-
-                            if (id && description && !isNaN(price)) {
-                                products.push({ id, description: description.trim(), price });
+                                
+                                if (id && description && !isNaN(price)) {
+                                    products.push({ id, description: description.trim(), price });
+                                }
                             }
                         }
                     }
+                     if (products.length === 0) {
+                        throw new Error("A análise do CSV foi concluída, mas nenhum produto foi encontrado. Verifique o formato do arquivo.");
+                    }
+                    return products;
+                } catch (err) {
+                    // Lança o erro para ser pego pelo bloco catch da função loadProducts
+                    throw new Error(`Erro ao analisar o CSV: ${err.message}`);
                 }
-                return products;
             };
 
-            // Função para renderizar os produtos na página
             const renderProducts = (products) => {
                 productListElement.innerHTML = '';
                 if(products.length === 0) {
-                     showError("Nenhum produto encontrado no arquivo CSV. Verifique o formato.");
+                     productListElement.innerHTML = '<p style="grid-column: 1 / -1; text-align: center;">Nenhum produto corresponde à busca.</p>';
                      return;
                 }
-                
                 products.forEach(product => {
                     const card = document.createElement('div');
                     card.className = 'product-card';
-                    card.innerHTML = `
-                        <div class="product-description" title="${product.description}">${product.description}</div>
-                        <div>
-                            <div class="product-price">${formatCurrency(product.price)}</div>
-                            <button class="add-to-cart-btn" data-id="${product.id}">Adicionar</button>
-                        </div>
-                    `;
+                    card.innerHTML = `<div class="product-description" title="${product.description}">${product.description}</div><div><div class="product-price">${product.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div><button class="add-to-cart-btn" data-id="${product.id}">Adicionar</button></div>`;
                     productListElement.appendChild(card);
                 });
             };
 
-            // Função para renderizar o carrinho
-            const renderCart = () => {
+            const loadProducts = async () => {
+                try {
+                    const response = await fetch('produtos.csv');
+                    if (!response.ok) {
+                        throw new Error(`O servidor não encontrou o arquivo 'produtos.csv'. Verifique se o nome está correto (minúsculo e sem acentos). Status: ${response.status} ${response.statusText}`);
+                    }
+                    const csvText = await response.text();
+                    if (!csvText) {
+                        throw new Error("O arquivo 'produtos.csv' foi encontrado, mas está vazio.");
+                    }
+                    allProducts = parseCSV(csvText);
+                    loadingElement.style.display = 'none';
+                    renderProducts(allProducts);
+                } catch (err) {
+                    showError(err.message, "Isso pode acontecer por um erro de digitação no nome do arquivo, um problema de cache ou um erro no formato do CSV.");
+                }
+            };
+
+            // O resto do código (carrinho, busca, etc.) permanece o mesmo
+            const renderCart = () => { /* ...código original... */ };
+            const addToCart = (productId) => { /* ...código original... */ };
+            const updateCart = (productId, change) => { /* ...código original... */ };
+            const removeFromCart = (productId) => { /* ...código original... */ };
+            // Funções originais coladas aqui para garantir a completude
+            const formatCurrency = (value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            renderCart = () => {
                 cartItemsElement.innerHTML = '';
                 let total = 0;
-                
                 if (cart.length === 0) {
                     cartItemsElement.innerHTML = '<li>Seu carrinho está vazio.</li>';
                 } else {
                     cart.forEach(item => {
                         const li = document.createElement('li');
                         li.className = 'cart-item';
-                        li.innerHTML = `
-                            <div class="cart-item-details">
-                                <span>${item.description}</span><br>
-                                <small>${formatCurrency(item.price)}</small>
-                            </div>
-                            <div class="cart-item-controls">
-                                <button class="quantity-btn" data-id="${item.id}" data-change="-1">-</button>
-                                <span>${item.quantity}</span>
-                                <button class="quantity-btn" data-id="${item.id}" data-change="1">+</button>
-                                <button class="remove-btn" data-id="${item.id}">×</button>
-                            </div>
-                        `;
+                        li.innerHTML = `<div class="cart-item-details" data-quantity="${item.quantity}"><span>${item.description}</span><br><small>${item.quantity} x ${formatCurrency(item.price)}</small></div><div class="cart-item-controls"><strong class="cart-item-total-print-only">${formatCurrency(item.price * item.quantity)}</strong><button class="quantity-btn" data-id="${item.id}" data-change="-1">-</button><span>${item.quantity}</span><button class="quantity-btn" data-id="${item.id}" data-change="1">+</button><button class="remove-btn" data-id="${item.id}">×</button></div>`;
                         cartItemsElement.appendChild(li);
                         total += item.price * item.quantity;
                     });
                 }
                 cartTotalElement.textContent = formatCurrency(total);
             };
-
-            // Função para adicionar produto ao carrinho
-            const addToCart = (productId, products) => {
-                const product = products.find(p => p.id === productId);
+            addToCart = (productId) => {
+                const product = allProducts.find(p => p.id === productId);
                 const cartItem = cart.find(item => item.id === productId);
-
-                if (cartItem) {
-                    cartItem.quantity++;
-                } else {
-                    cart.push({ ...product, quantity: 1 });
-                }
+                if (cartItem) { cartItem.quantity++; } else { cart.push({ ...product, quantity: 1 }); }
                 renderCart();
             };
-            
-            // Função para alterar a quantidade ou remover item
-            const updateCart = (productId, change) => {
+            updateCart = (productId, change) => {
                  const cartItem = cart.find(item => item.id === productId);
                  if (cartItem) {
                      cartItem.quantity += change;
-                     if(cartItem.quantity <= 0) {
-                         cart = cart.filter(item => item.id !== productId);
-                     }
+                     if(cartItem.quantity <= 0) { cart = cart.filter(item => item.id !== productId); }
                  }
                  renderCart();
             };
-
-            const removeFromCart = (productId) => {
+            removeFromCart = (productId) => {
                 cart = cart.filter(item => item.id !== productId);
                 renderCart();
             };
-            
-            const showError = (message) => {
-                loadingElement.style.display = 'none';
-                productListElement.innerHTML = '';
-                errorElement.textContent = message;
-                errorElement.style.display = 'block';
-            }
 
-            // Carregar e processar o CSV
-            const loadProducts = async () => {
-                try {
-                    const response = await fetch('produtos.csv');
-                    if (!response.ok) {
-                        throw new Error(`Não foi possível carregar o arquivo produtos.csv (Erro ${response.status})`);
-                    }
-                    const csvText = await response.text();
-                    const products = parseCSV(csvText);
-                    
-                    loadingElement.style.display = 'none';
-                    renderProducts(products);
-
-                    productListElement.addEventListener('click', (e) => {
-                        if (e.target.classList.contains('add-to-cart-btn')) {
-                            addToCart(e.target.dataset.id, products);
-                        }
-                    });
-
-                } catch (err) {
-                    showError(err.message + ". Certifique-se que o arquivo 'produtos.csv' está na mesma pasta que o 'index.html'.");
-                    console.error(err);
-                }
-            };
-            
-            // Eventos do carrinho
-            cartItemsElement.addEventListener('click', (e) => {
-                const target = e.target;
-                const productId = target.dataset.id;
-                
-                if (target.classList.contains('quantity-btn')) {
-                    const change = parseInt(target.dataset.change, 10);
-                    updateCart(productId, change);
-                }
-                if (target.classList.contains('remove-btn')) {
-                    removeFromCart(productId);
-                }
-            });
-
+            productListElement.addEventListener('click', (e) => { if (e.target.classList.contains('add-to-cart-btn')) { addToCart(e.target.dataset.id); } });
+            cartItemsElement.addEventListener('click', (e) => { const t = e.target, id = t.dataset.id; if (t.classList.contains('quantity-btn')) { updateCart(id, parseInt(t.dataset.change, 10)); } if (t.classList.contains('remove-btn')) { removeFromCart(id); } });
+            searchInputElement.addEventListener('input', () => { const s = searchInputElement.value.toLowerCase(); renderProducts(allProducts.filter(p => p.description.toLowerCase().includes(s))); });
+            printCartBtn.addEventListener('click', () => { window.print(); });
 
             loadProducts();
             renderCart();
@@ -429,3 +330,5 @@
     </script>
 </body>
 </html>
+
+
