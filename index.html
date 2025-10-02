@@ -67,7 +67,7 @@
             transition: transform 0.2s, box-shadow 0.2s;
         }
         .product-card:hover { transform: translateY(-5px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .product-description { font-weight: bold; margin-bottom: 10px; flex-grow: 1; }
+        .product-description { font-weight: bold; margin-bottom: 10px; flex-grow: 1; font-size: 0.9em; }
         .product-price { font-size: 1.2em; color: var(--success-color); margin-bottom: 15px; }
         .add-to-cart-btn {
             background-color: var(--primary-color);
@@ -77,9 +77,9 @@
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
-            transition: background-color 0.2s;
+            width: 100%;
+            box-sizing: border-box;
         }
-        .add-to-cart-btn:hover { background-color: #0056b3; }
         #cart {
             background-color: var(--surface-color);
             border: 1px solid var(--border-color);
@@ -108,9 +108,8 @@
             height: 25px;
             border-radius: 50%;
             margin: 0 5px;
-            font-weight: bold;
         }
-        .remove-btn { color: var(--danger-color); border-color: var(--danger-color); }
+        .remove-btn { color: var(--danger-color); border-color: var(--danger-color); font-weight: bold;}
         #cart-total { margin-top: 20px; text-align: right; font-size: 1.5em; font-weight: bold; }
         #print-cart-btn {
             background-color: var(--success-color);
@@ -122,9 +121,7 @@
             font-weight: bold;
             width: 100%;
             margin-top: 15px;
-            font-size: 1em;
         }
-        #print-cart-btn:hover { background-color: #218838; }
         #loading { text-align: center; padding: 20px; font-size: 1.2em; }
         #error {
             text-align: center;
@@ -152,7 +149,7 @@
 
         <main>
             <div class="search-container">
-                <input type="text" id="search-input" placeholder="Buscar produtos por nome...">
+                <input type="text" id="search-input" placeholder="Buscar produtos...">
             </div>
             <div id="product-list"></div>
             <div id="loading">Carregando produtos...</div>
@@ -171,6 +168,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Elementos da página
             const productListElement = document.getElementById('product-list');
             const cartItemsElement = document.getElementById('cart-items');
             const cartTotalElement = document.getElementById('cart-total').querySelector('strong');
@@ -183,7 +181,7 @@
             let cart = [];
             let allProducts = [];
 
-            // --- FUNÇÃO DE DIAGNÓSTICO MELHORADA ---
+            // --- FUNÇÃO DE DIAGNÓSTICO ---
             const showError = (message, details = '') => {
                 loadingElement.style.display = 'none';
                 productListElement.innerHTML = '';
@@ -192,64 +190,65 @@
                 console.error(message, details);
             };
 
+            // --- NOVA FUNÇÃO DE LEITURA DO CSV ---
             const parseCSV = (csvText) => {
                 try {
                     const lines = csvText.trim().replace(/\r/g, '').split('\n');
                     const products = [];
+                    
+                    // Extrai informações da empresa (melhorado para ser mais flexível)
+                    const companyName = lines.find(line => line.includes('LOURENCO E SILVA'))?.split(',')[4]?.replace(/"/g, '').trim() || 'Nome da Empresa';
+                    const cnpjLine = lines.find(line => line.includes('CNPJ'));
+                    const cnpj = cnpjLine ? cnpjLine.split(',')[4]?.split('IE')[0].replace(/"/g, '').replace('CNPJ :','').trim() : 'CNPJ não encontrado';
+                    companyInfoElement.innerText = `${companyName} - CNPJ: ${cnpj}`;
 
-                    const companyName = lines.find(line => line.includes('LOURENCO E SILVA'))?.split(',')[2]?.replace(/"/g, '').trim() || 'Nome da Empresa';
-                    const cnpj = lines.find(line => line.includes('CNPJ'))?.split(',')[1]?.replace(/"/g, '').trim() || 'CNPJ não encontrado';
-                    companyInfoElement.innerText = `${companyName} - ${cnpj}`;
+                    // Regex para capturar os produtos em linha única, lidando com as variações
+                    const productRegex = /^"?(\d{5}[^,]+?)(?:",?|,,)(?:[^,"]*,){0,2}(?:"[^"]*")?,"((\d|,)+)"$/;
+                    
+                    let extraDescLines = [];
 
-                    let productStartIndex = lines.findIndex(line => line.includes('Descricao,Ncm.No.'));
-                    if (productStartIndex === -1) {
-                        throw new Error("A linha de cabeçalho 'Descricao,Ncm.No.' não foi encontrada no CSV.");
-                    }
+                    for (const line of lines) {
+                        const match = line.match(productRegex);
 
-                    for (let i = productStartIndex + 1; i < lines.length; i++) {
-                        const line = lines[i];
-                        if (!line || line.trim() === '""' || line.trim() === '') continue;
-
-                        const productStartMatch = line.match(/^"(\d{5}),(.+)/);
-                        if (productStartMatch && i + 1 < lines.length) {
-                            const nextLine = lines[i + 1];
-                            const priceMatch = nextLine.match(/,""(\d+,\d+)"""$/);
-
-                            if (priceMatch) {
-                                const id = productStartMatch[1];
-                                let description = productStartMatch[2].split(',').slice(2).join(',').trim().replace(/"/g, '');
-                                const price = parseFloat(priceMatch[1].replace(',', '.'));
-                                
-                                let j = i + 2;
-                                while(j < lines.length && !lines[j].match(/^"(\d{5},/)) {
-                                    const extraDesc = lines[j].replace(/,/g, ' ').replace(/"/g, '').trim();
-                                    if (extraDesc.length > 0 && isNaN(extraDesc[0])) {
-                                        description += ' ' + extraDesc;
-                                    }
-                                    j++;
-                                }
-                                
-                                if (id && description && !isNaN(price)) {
-                                    products.push({ id, description: description.trim(), price });
-                                }
+                        if (match) {
+                            // Se havia descrição extra, anexa ao produto anterior
+                            if (extraDescLines.length > 0 && products.length > 0) {
+                                products[products.length - 1].description += ' ' + extraDescLines.join(' ');
+                                extraDescLines = [];
                             }
+
+                            const id = match[1].substring(0, 5);
+                            let description = match[1].replace(/"/g, '').replace(/\s\s+/g, ' ').trim();
+                            const price = parseFloat(match[2].replace(',', '.'));
+
+                            if (id && description && !isNaN(price)) {
+                                products.push({ id, description, price });
+                            }
+                        } else if (products.length > 0 && !line.includes('Pág:') && !line.includes('Usuário CLAUDIO') && line.split(',').some(c => c.trim() !== '')) {
+                            // Se não é um produto e não é cabeçalho/rodapé, assume que é linha de descrição extra
+                            extraDescLines.push(line.replace(/,/g, ' ').replace(/"/g, '').trim());
                         }
                     }
-                     if (products.length === 0) {
-                        throw new Error("A análise do CSV foi concluída, mas nenhum produto foi encontrado. Verifique o formato do arquivo.");
+                    
+                    // Anexa qualquer descrição extra remanescente ao último produto
+                     if (extraDescLines.length > 0 && products.length > 0) {
+                        products[products.length - 1].description += ' ' + extraDescLines.join(' ');
+                    }
+
+                    if (products.length === 0) {
+                        throw new Error("Nenhum produto foi encontrado. Verifique o formato do arquivo CSV e se o nome está correto ('produtos.csv').");
                     }
                     return products;
                 } catch (err) {
-                    // Lança o erro para ser pego pelo bloco catch da função loadProducts
                     throw new Error(`Erro ao analisar o CSV: ${err.message}`);
                 }
             };
 
             const renderProducts = (products) => {
                 productListElement.innerHTML = '';
-                if(products.length === 0) {
-                     productListElement.innerHTML = '<p style="grid-column: 1 / -1; text-align: center;">Nenhum produto corresponde à busca.</p>';
-                     return;
+                if (products.length === 0) {
+                    productListElement.innerHTML = '<p style="grid-column: 1 / -1; text-align: center;">Nenhum produto corresponde à busca.</p>';
+                    return;
                 }
                 products.forEach(product => {
                     const card = document.createElement('div');
@@ -258,12 +257,13 @@
                     productListElement.appendChild(card);
                 });
             };
-
+            
             const loadProducts = async () => {
                 try {
-                    const response = await fetch('produtos.csv');
+                    // Adicionado um parâmetro para evitar cache
+                    const response = await fetch('produtos.csv?t=' + new Date().getTime());
                     if (!response.ok) {
-                        throw new Error(`O servidor não encontrou o arquivo 'produtos.csv'. Verifique se o nome está correto (minúsculo e sem acentos). Status: ${response.status} ${response.statusText}`);
+                        throw new Error(`O servidor não encontrou o arquivo 'produtos.csv'. Verifique se o nome está correto (minúsculo e sem acentos). Status: ${response.status}`);
                     }
                     const csvText = await response.text();
                     if (!csvText) {
@@ -273,18 +273,13 @@
                     loadingElement.style.display = 'none';
                     renderProducts(allProducts);
                 } catch (err) {
-                    showError(err.message, "Isso pode acontecer por um erro de digitação no nome do arquivo, um problema de cache ou um erro no formato do CSV.");
+                    showError(err.message, "Isso pode acontecer por um erro de digitação, problema de cache ou um erro no formato do CSV.");
                 }
             };
 
-            // O resto do código (carrinho, busca, etc.) permanece o mesmo
-            const renderCart = () => { /* ...código original... */ };
-            const addToCart = (productId) => { /* ...código original... */ };
-            const updateCart = (productId, change) => { /* ...código original... */ };
-            const removeFromCart = (productId) => { /* ...código original... */ };
-            // Funções originais coladas aqui para garantir a completude
             const formatCurrency = (value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            renderCart = () => {
+
+            const renderCart = () => {
                 cartItemsElement.innerHTML = '';
                 let total = 0;
                 if (cart.length === 0) {
@@ -293,20 +288,22 @@
                     cart.forEach(item => {
                         const li = document.createElement('li');
                         li.className = 'cart-item';
-                        li.innerHTML = `<div class="cart-item-details" data-quantity="${item.quantity}"><span>${item.description}</span><br><small>${item.quantity} x ${formatCurrency(item.price)}</small></div><div class="cart-item-controls"><strong class="cart-item-total-print-only">${formatCurrency(item.price * item.quantity)}</strong><button class="quantity-btn" data-id="${item.id}" data-change="-1">-</button><span>${item.quantity}</span><button class="quantity-btn" data-id="${item.id}" data-change="1">+</button><button class="remove-btn" data-id="${item.id}">×</button></div>`;
+                        li.innerHTML = `<div class="cart-item-details"><span>${item.description}</span><br><small>${item.quantity} x ${formatCurrency(item.price)}</small></div><div class="cart-item-controls"><button class="quantity-btn" data-id="${item.id}" data-change="-1">-</button><span>${item.quantity}</span><button class="quantity-btn" data-id="${item.id}" data-change="1">+</button><button class="remove-btn" data-id="${item.id}">×</button></div>`;
                         cartItemsElement.appendChild(li);
                         total += item.price * item.quantity;
                     });
                 }
                 cartTotalElement.textContent = formatCurrency(total);
             };
-            addToCart = (productId) => {
+
+            const addToCart = (productId) => {
                 const product = allProducts.find(p => p.id === productId);
                 const cartItem = cart.find(item => item.id === productId);
                 if (cartItem) { cartItem.quantity++; } else { cart.push({ ...product, quantity: 1 }); }
                 renderCart();
             };
-            updateCart = (productId, change) => {
+
+            const updateCart = (productId, change) => {
                  const cartItem = cart.find(item => item.id === productId);
                  if (cartItem) {
                      cartItem.quantity += change;
@@ -314,7 +311,8 @@
                  }
                  renderCart();
             };
-            removeFromCart = (productId) => {
+            
+            const removeFromCart = (productId) => {
                 cart = cart.filter(item => item.id !== productId);
                 renderCart();
             };
@@ -322,7 +320,7 @@
             productListElement.addEventListener('click', (e) => { if (e.target.classList.contains('add-to-cart-btn')) { addToCart(e.target.dataset.id); } });
             cartItemsElement.addEventListener('click', (e) => { const t = e.target, id = t.dataset.id; if (t.classList.contains('quantity-btn')) { updateCart(id, parseInt(t.dataset.change, 10)); } if (t.classList.contains('remove-btn')) { removeFromCart(id); } });
             searchInputElement.addEventListener('input', () => { const s = searchInputElement.value.toLowerCase(); renderProducts(allProducts.filter(p => p.description.toLowerCase().includes(s))); });
-            printCartBtn.addEventListener('click', () => { window.print(); });
+            printCartBtn.addEventListener('click', () => window.print());
 
             loadProducts();
             renderCart();
