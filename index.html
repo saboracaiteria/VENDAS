@@ -112,6 +112,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // ... (todos os outros 'const' de elementos da UI permanecem aqui) ...
             const searchInput = document.getElementById('search-input');
             const productListElement = document.getElementById('product-list');
             const cartItemsElement = document.getElementById('cart-items');
@@ -133,6 +134,7 @@
             const modalAddBtn = document.getElementById('modal-add-btn');
             const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
+
             let allProducts = [];
             let cart = [];
             let currentModalProduct = null;
@@ -145,12 +147,13 @@
                 setTimeout(() => { messageBox.classList.add('opacity-0'); }, 3000);
             };
             
+            // --- PARSER DE CSV VERSÃO 100% CORRIGIDA ---
             const parseCSV = (csvText) => {
                 const lines = csvText.trim().replace(/\r/g, '').split('\n');
                 const products = [];
                 let currentBlock = [];
                 
-                const idRegex = /^"?(\d{5})/;
+                const idRegex = /^"?(\d{5})\s*-\s*/;
                 const priceRegex = /,"(\d+,\d+)"$|,""(\d+,\d+)"""?$/;
                 const junkLineRegex = /Pág:|Usuário CLAUDIO|Descricao,,Ncm,No.|LOURENCO E SILVA|CNPJ :/
 
@@ -178,8 +181,6 @@
                             break;
                         }
                     }
-                    if(manufacturer === 'N/A') manufacturer = 'Genérico';
-
 
                     let description = block.map(line => 
                         line.replace(priceRegex, '').replace(/"/g, '').replace(/,/g, ' ').replace(/\s\s+/g, ' ').trim()
@@ -323,7 +324,7 @@
 
             searchInput.addEventListener('input', () => {
                 const term = searchInput.value.toLowerCase();
-                renderProducts(term.length >= 3 ? allProducts.filter(p => p.description.toLowerCase().includes(term) || p.manufacturer.toLowerCase().includes(term)) : []);
+                renderProducts(term.length >= 3 ? allProducts.filter(p => p.description.toLowerCase().includes(term) || p.id.startsWith(term)) : []);
             });
 
             productListElement.addEventListener('click', (e) => {
