@@ -36,7 +36,6 @@
         </div>
         
         <div class="flex-grow p-4">
-            <!-- Seção do Carrinho (Agora no topo) -->
             <div id="cart-section">
                 <h2 class="text-lg font-semibold mb-2 text-gray-700">MEU PEDIDO</h2>
                 <div id="cart-items" class="space-y-2">
@@ -61,7 +60,6 @@
                 </div>
             </div>
             
-            <!-- Lista de Produtos (Agora embaixo) -->
             <div id="search-results-section" class="mt-6">
                 <h2 class="text-lg font-semibold mb-2 text-gray-700 border-t pt-4">RESULTADOS DA BUSCA</h2>
                 <div id="product-list" class="space-y-2">
@@ -180,6 +178,7 @@
                         }
                     }
                     if(manufacturer === 'N/A') manufacturer = 'Genérico';
+
 
                     let description = block.map(line => 
                         line.replace(priceRegex, '').replace(/"/g, '').replace(/,/g, ' ').replace(/\s\s+/g, ' ').trim()
