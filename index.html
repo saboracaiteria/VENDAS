@@ -112,7 +112,6 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // ... (todos os outros 'const' de elementos da UI permanecem aqui) ...
             const searchInput = document.getElementById('search-input');
             const productListElement = document.getElementById('product-list');
             const cartItemsElement = document.getElementById('cart-items');
@@ -134,7 +133,6 @@
             const modalAddBtn = document.getElementById('modal-add-btn');
             const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
-
             let allProducts = [];
             let cart = [];
             let currentModalProduct = null;
@@ -147,13 +145,12 @@
                 setTimeout(() => { messageBox.classList.add('opacity-0'); }, 3000);
             };
             
-            // --- PARSER DE CSV VERSÃO 100% CORRIGIDA ---
             const parseCSV = (csvText) => {
                 const lines = csvText.trim().replace(/\r/g, '').split('\n');
                 const products = [];
                 let currentBlock = [];
                 
-                const idRegex = /^"?(\d{5})\s*-\s*/;
+                const startRegex = /^"?\d+\s*-\s*/; 
                 const priceRegex = /,"(\d+,\d+)"$|,""(\d+,\d+)"""?$/;
                 const junkLineRegex = /Pág:|Usuário CLAUDIO|Descricao,,Ncm,No.|LOURENCO E SILVA|CNPJ :/
 
@@ -167,7 +164,7 @@
                     const priceStr = priceMatch[1] || priceMatch[2];
                     const price = parseFloat(priceStr.replace(',', '.'));
                     
-                    const idMatch = block[0].match(idRegex);
+                    const idMatch = block[0].match(/^"?(\d+)/);
                     if(!idMatch) return;
                     
                     const id = idMatch[1];
@@ -186,9 +183,8 @@
                         line.replace(priceRegex, '').replace(/"/g, '').replace(/,/g, ' ').replace(/\s\s+/g, ' ').trim()
                     ).join(' ').trim();
                     
-                    if (description.startsWith(id)) {
-                        description = description.substring(id.length).replace(/^-/, '').trim();
-                    }
+                    description = description.replace(/^\d+\s*-\s*/, '');
+                    
                      if (manufacturer !== 'N/A') {
                        const manuIndex = description.toUpperCase().lastIndexOf(manufacturer);
                        if (manuIndex > -1) {
@@ -206,7 +202,7 @@
                     const trimmed = line.trim();
                     if (!trimmed || junkLineRegex.test(trimmed) || trimmed.split(',').every(c => c === '""' || c === '')) continue;
                     
-                    if (idRegex.test(trimmed)) {
+                    if (startRegex.test(trimmed)) {
                         processBlock(currentBlock);
                         currentBlock = [trimmed];
                     } else if (currentBlock.length > 0) {
@@ -324,7 +320,7 @@
 
             searchInput.addEventListener('input', () => {
                 const term = searchInput.value.toLowerCase();
-                renderProducts(term.length >= 3 ? allProducts.filter(p => p.description.toLowerCase().includes(term) || p.id.startsWith(term)) : []);
+                renderProducts(term.length >= 3 ? allProducts.filter(p => p.description.toLowerCase().includes(term) || p.manufacturer.toLowerCase().includes(term)) : []);
             });
 
             productListElement.addEventListener('click', (e) => {
@@ -389,4 +385,3 @@
     </script>
 </body>
 </html>
-
