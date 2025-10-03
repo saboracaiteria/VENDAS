@@ -145,7 +145,6 @@
                 setTimeout(() => { messageBox.classList.add('opacity-0'); }, 3000);
             };
             
-            // --- PARSER DE CSV VERSÃO DEFINITIVA ---
             const parseCSV = (csvText) => {
                 const lines = csvText.trim().replace(/\r/g, '').split('\n');
                 const products = [];
@@ -160,7 +159,7 @@
                     
                     const fullText = block.join(' ');
                     const priceMatch = fullText.match(priceRegex);
-                    if (!priceMatch) return; // Se não tem preço, não é um produto válido
+                    if (!priceMatch) return;
                     
                     const priceStr = priceMatch[1] || priceMatch[2];
                     const price = parseFloat(priceStr.replace(',', '.'));
@@ -171,14 +170,16 @@
                     const id = idMatch[1];
                     
                     let manufacturer = 'N/A';
-                    const manuParts = fullText.split(' UN ')[0].split(/,|\s/);
-                     for(let i = manuParts.length - 1; i >= 0; i--) {
+                    const manuParts = fullText.split(/,|\s/);
+                    for(let i = manuParts.length - 1; i >= 0; i--) {
                         let part = manuParts[i].replace(/"/g, '').trim();
                         if(part.length > 2 && isNaN(part) && part === part.toUpperCase()) {
                             manufacturer = part;
                             break;
                         }
                     }
+                    if(manufacturer === 'N/A') manufacturer = 'Genérico';
+
 
                     let description = block.map(line => 
                         line.replace(priceRegex, '').replace(/"/g, '').replace(/,/g, ' ').replace(/\s\s+/g, ' ').trim()
