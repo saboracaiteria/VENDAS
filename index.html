@@ -145,10 +145,12 @@
                 setTimeout(() => { messageBox.classList.add('opacity-0'); }, 3000);
             };
             
+            // --- PARSER DE CSV VERSÃO DEFINITIVA ---
             const parseCSV = (csvText) => {
                 const lines = csvText.trim().replace(/\r/g, '').split('\n');
                 const products = [];
                 let currentBlock = [];
+                
                 const idRegex = /^"?(\d{5})/;
                 const priceRegex = /,"(\d+,\d+)"$|,""(\d+,\d+)"""?$/;
                 const junkLineRegex = /Pág:|Usuário CLAUDIO|Descricao,,Ncm,No.|LOURENCO E SILVA|CNPJ :/
@@ -158,7 +160,7 @@
                     
                     const fullText = block.join(' ');
                     const priceMatch = fullText.match(priceRegex);
-                    if (!priceMatch) return;
+                    if (!priceMatch) return; // Se não tem preço, não é um produto válido
                     
                     const priceStr = priceMatch[1] || priceMatch[2];
                     const price = parseFloat(priceStr.replace(',', '.'));
@@ -169,15 +171,14 @@
                     const id = idMatch[1];
                     
                     let manufacturer = 'N/A';
-                    const manuParts = fullText.split(/,|\s/);
-                    for(let i = manuParts.length - 1; i >= 0; i--) {
+                    const manuParts = fullText.split(' UN ')[0].split(/,|\s/);
+                     for(let i = manuParts.length - 1; i >= 0; i--) {
                         let part = manuParts[i].replace(/"/g, '').trim();
                         if(part.length > 2 && isNaN(part) && part === part.toUpperCase()) {
                             manufacturer = part;
                             break;
                         }
                     }
-                    if(manufacturer === 'N/A') manufacturer = 'Genérico';
 
                     let description = block.map(line => 
                         line.replace(priceRegex, '').replace(/"/g, '').replace(/,/g, ' ').replace(/\s\s+/g, ' ').trim()
@@ -186,7 +187,7 @@
                     if (description.startsWith(id)) {
                         description = description.substring(id.length).replace(/^-/, '').trim();
                     }
-                    if (manufacturer !== 'N/A') {
+                     if (manufacturer !== 'N/A') {
                        const manuIndex = description.toUpperCase().lastIndexOf(manufacturer);
                        if (manuIndex > -1) {
                          description = description.substring(0, manuIndex).trim();
@@ -386,5 +387,4 @@
     </script>
 </body>
 </html>
-
 
