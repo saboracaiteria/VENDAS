@@ -3,489 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Vendas</title>
+    <title>Busca de Itens</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
-            --primary-color: #007bff;
-            --secondary-color: #6c757d;
-            --background-color: #f8f9fa;
-            --surface-color: #ffffff;
-            --text-color: #212529;
-            --border-color: #dee2e6;
-            --success-color: #28a745;
-            --danger-color: #dc3545;
+            --primary: #1a202c;
+            --secondary: #a0aec0;
+            --success: #38a169;
+            --danger: #e53e3e;
+            --background: #f7fafc;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            margin: 0;
-            background-color: var(--background-color);
-            color: var(--text-color);
+            background-color: var(--background);
         }
-        .container {
-            width: 90%;
-            max-width: 1200px;
-            margin: 20px auto;
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 30px;
-        }
-        header {
-            grid-column: 1 / -1;
-            background-color: var(--surface-color);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            border-left: 5px solid var(--primary-color);
-        }
-        header h1 { margin: 0; color: var(--primary-color); }
-        #company-info { font-size: 0.9em; color: var(--secondary-color); }
-        main { display: flex; flex-direction: column; }
-        .search-container { margin-bottom: 20px; }
-        #search-input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 5px;
-            font-size: 1em;
-            box-sizing: border-box;
-        }
-        aside { position: sticky; top: 20px; height: fit-content; }
-        #product-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 20px;
-            min-height: 100px;
-        }
-        #initial-message {
-            grid-column: 1 / -1;
-            text-align: center;
-            color: var(--secondary-color);
-            padding: 40px 20px;
-            background-color: var(--surface-color);
-            border-radius: 8px;
-            border: 2px dashed var(--border-color);
-        }
-        .product-card {
-            background-color: var(--surface-color);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .product-card:hover { transform: translateY(-5px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .product-description { font-weight: bold; margin-bottom: 10px; flex-grow: 1; font-size: 0.9em; }
-        .product-price { font-size: 1.2em; color: var(--success-color); margin-bottom: 15px; }
-        .add-to-cart-btn {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        #cart {
-            background-color: var(--surface-color);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        #cart h2 { margin-top: 0; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
-        #cart-items { list-style: none; padding: 0; margin: 0; max-height: 300px; overflow-y: auto; }
-        .cart-item {
-            display: flex;
-            flex-direction: column;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 0.9em;
-        }
-        .cart-item-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 8px;
-        }
-        .cart-item-details { flex-grow: 1; margin-right: 10px; }
-        .cart-item-controls { display: flex; align-items: center; white-space: nowrap; }
-        .cart-item-price-editor { display: flex; align-items: center; justify-content: flex-end; gap: 5px;}
-        .cart-item-price-editor label { font-size: 0.8em; }
-        .cart-item-price {
-            width: 80px;
-            text-align: right;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            padding: 4px;
-        }
-        .quantity-btn, .remove-btn {
-            background: none;
-            border: 1px solid var(--border-color);
-            color: var(--secondary-color);
-            cursor: pointer;
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            margin: 0 5px;
-        }
-        .remove-btn { color: var(--danger-color); border-color: var(--danger-color); font-weight: bold;}
-        .totals-section { margin-top: 15px; }
-        .discount-row, .total-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 10px;
-            font-size: 1.1em;
-        }
-        #discount-input {
-            width: 100px;
-            text-align: right;
-            font-size: 0.9em;
-            padding: 5px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-        }
-        #cart-total { font-size: 1.5em; font-weight: bold; }
-        .whatsapp-section { margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 15px; }
-        #whatsapp-number { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; font-size: 1em; box-sizing: border-box; margin-bottom: 10px; }
-        .action-btn { color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px; font-size: 0.95em; box-sizing: border-box; }
-        .action-btn.whatsapp { background-color: #25D366; }
-        .action-btn.copy { background-color: var(--secondary-color); }
-        #loading, #error { grid-column: 1 / -1; }
-        #error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; border-radius: 8px; display: none; word-wrap: break-word; padding: 20px;}
-        #message-box { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.3); z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; }
-        #message-box.show { opacity: 1; visibility: visible; }
-        
-        @media (max-width: 900px) {
-            .container { grid-template-columns: 1fr; }
-            aside { position: static; margin-top: 30px; }
-            .product-card { flex-direction: row; justify-content: space-between; align-items: center; }
-            .product-card > div:last-child { min-width: 100px; text-align: right; }
-            .add-to-cart-btn { width: auto; }
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.5);
         }
     </style>
 </head>
-<body>
+<body class="bg-gray-100">
 
-    <div class="container">
-        <header>
-            <h1>Sistema de Vendas</h1>
-            <div id="company-info">Carregando...</div>
+    <div id="app-container" class="max-w-md mx-auto bg-white shadow-lg min-h-screen">
+        <!-- Cabeçalho -->
+        <header class="bg-gray-800 text-white p-4 flex items-center shadow-md">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="cursor-pointer"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <h1 class="text-lg font-semibold uppercase mx-auto">Busca de Itens</h1>
         </header>
 
-        <main>
-            <div class="search-container">
-                <input type="text" id="search-input" placeholder="Digite 3 letras para buscar...">
-            </div>
-            <div id="product-list-wrapper">
-                 <div id="initial-message">
-                    <p>A lista de produtos aparecerá aqui assim que você começar a digitar.</p>
+        <!-- Barra de Busca -->
+        <div class="p-4">
+            <div class="relative">
+                <input type="search" id="search-input" placeholder="Nome item..." class="w-full pl-4 pr-10 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400">
+                <div class="absolute top-0 right-0 mt-2 mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 </div>
-                <div id="product-list"></div>
             </div>
-            <div id="loading" style="display: none;">Carregando produtos...</div>
-            <div id="error"></div>
-        </main>
+        </div>
+        
+        <!-- Lista de Produtos (Resultados da Busca) -->
+        <div id="product-list" class="px-4 pb-4">
+            <!-- Os resultados da busca aparecerão aqui -->
+        </div>
 
-        <aside>
-            <div id="cart">
-                <h2>Carrinho</h2>
-                <ul id="cart-items"></ul>
-                <div class="totals-section">
-                    <div class="discount-row">
-                        <label for="discount-input">Desconto (R$):</label>
-                        <input type="number" id="discount-input" placeholder="0,00" step="0.01">
-                    </div>
-                    <div id="cart-total" class="total-row">
-                        <span>Total:</span>
-                        <strong>R$ 0,00</strong>
-                    </div>
+        <!-- Seção do Carrinho -->
+        <div id="cart-section" class="p-4 border-t-2 border-gray-200">
+            <h2 class="text-lg font-semibold mb-2">MEU PEDIDO</h2>
+            <div id="cart-items">
+                <p class="text-gray-500">Seu pedido está vazio.</p>
+            </div>
+            
+            <div class="totals-section mt-4 pt-4 border-t">
+                 <div class="flex justify-between items-center mb-2">
+                    <label for="discount-input" class="text-gray-600">Desconto (R$):</label>
+                    <input type="number" id="discount-input" placeholder="0.00" class="w-24 text-right border rounded-md p-1">
                 </div>
-                <div class="whatsapp-section">
-                    <input type="tel" id="whatsapp-number" placeholder="DDD + Número do cliente">
-                    <button id="whatsapp-btn" class="action-btn whatsapp">Enviar Orçamento</button>
-                    <button id="copy-btn" class="action-btn copy">Copiar Orçamento</button>
+                <div id="cart-total" class="flex justify-between items-center font-bold text-xl">
+                    <span>Total:</span>
+                    <strong id="total-value">R$ 0,00</strong>
                 </div>
             </div>
-        </aside>
+
+            <div class="whatsapp-section mt-4">
+                <input type="tel" id="whatsapp-number" placeholder="DDD + Número do cliente" class="w-full p-2 border rounded-md mb-2">
+                <button id="whatsapp-btn" class="w-full bg-green-500 text-white font-bold py-2 px-4 rounded-md hover:bg-green-600">Enviar Orçamento</button>
+                <button id="copy-btn" class="w-full bg-gray-500 text-white font-bold py-2 px-4 rounded-md mt-2 hover:bg-gray-600">Copiar Orçamento</button>
+            </div>
+        </div>
     </div>
 
-    <textarea id="quote-text" style="position: absolute; left: -9999px;"></textarea>
-    <div id="message-box"></div>
+    <!-- Modal de Adição de Item -->
+    <div id="add-item-modal" class="fixed inset-0 z-50 items-center justify-center flex hidden modal-backdrop">
+        <div class="bg-white rounded-lg shadow-xl w-11/12 max-w-sm p-4">
+            <h3 id="modal-item-name" class="font-bold text-center text-lg mb-4">COPO VIDRO VERDE</h3>
+            <div class="space-y-3 text-sm">
+                <div class="flex justify-between items-center">
+                    <span class="font-semibold text-gray-600">ITEM:</span>
+                    <span id="modal-item-desc" class="text-right">COPO VIDRO AZUL</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="font-semibold text-gray-600">QUANTIDADE:</span>
+                    <div class="flex items-center space-x-3">
+                        <button id="modal-qty-minus" class="w-8 h-8 rounded-full border bg-gray-200">-</button>
+                        <span id="modal-qty" class="font-bold text-lg">1</span>
+                        <button id="modal-qty-plus" class="w-8 h-8 rounded-full border bg-green-500 text-white">+</button>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="font-semibold text-gray-600">VALOR:</span>
+                    <span id="modal-item-price">R$ 10,00</span>
+                </div>
+                 <div class="flex justify-between items-center">
+                    <span class="font-semibold text-gray-600">DESCONTO ITEM (%):</span>
+                    <input type="number" id="modal-item-discount" class="w-20 text-right border rounded-md p-1" placeholder="0">
+                </div>
+                <div class="flex justify-between items-center font-bold text-lg">
+                    <span class="text-gray-600">VALOR TOTAL:</span>
+                    <span id="modal-total-price">R$ 10,00</span>
+                </div>
+            </div>
+            <div class="mt-6 flex flex-col space-y-2">
+                <button id="modal-add-btn" class="bg-gray-800 text-white py-3 rounded-md font-semibold">ADICIONAR</button>
+                <button id="modal-cancel-btn" class="bg-gray-300 text-gray-800 py-3 rounded-md font-semibold">CANCELAR</button>
+            </div>
+        </div>
+    </div>
+    
+    <textarea id="quote-text" class="absolute -left-full"></textarea>
+    <div id="message-box" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-gray-800 text-white py-2 px-4 rounded-md shadow-lg transition-opacity duration-300 opacity-0"></div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const productListElement = document.getElementById('product-list');
-            const cartItemsElement = document.getElementById('cart-items');
-            const cartTotalElement = document.getElementById('cart-total').querySelector('strong');
-            const companyInfoElement = document.getElementById('company-info');
-            const loadingElement = document.getElementById('loading');
-            const errorElement = document.getElementById('error');
-            const searchInputElement = document.getElementById('search-input');
-            const initialMessage = document.getElementById('initial-message');
-            const whatsappBtn = document.getElementById('whatsapp-btn');
-            const copyBtn = document.getElementById('copy-btn');
-            const whatsappNumberInput = document.getElementById('whatsapp-number');
-            const quoteTextarea = document.getElementById('quote-text');
-            const messageBox = document.getElementById('message-box');
-            const discountInput = document.getElementById('discount-input');
-
-            let cart = [];
-            let allProducts = [];
-            let discount = 0;
-
-            const showMessage = (text, duration = 3000) => {
-                messageBox.textContent = text;
-                messageBox.classList.add('show');
-                setTimeout(() => { messageBox.classList.remove('show'); }, duration);
-            };
-            const showError = (message) => {
-                loadingElement.style.display = 'none';
-                initialMessage.style.display = 'none';
-                errorElement.innerHTML = `<strong>Ocorreu um erro:</strong><br>${message}`;
-                errorElement.style.display = 'block';
-            };
-
-            const processProductBlock = (block, products) => {
-                if (block.length === 0) return;
-
-                const firstLine = block[0];
-                const idMatch = firstLine.match(/^"?(\d{5})/);
-                if (!idMatch) return; // Bloco inválido se a primeira linha não tem ID
-                
-                const id = idMatch[1];
-                let price = null;
-
-                // Combina o bloco em um único texto para facilitar a busca
-                const fullTextBlock = block.join(' ');
-                const priceMatch = fullTextBlock.match(/,"(\d+,\d+)"\s*$/) || fullTextBlock.match(/,""(\d+,\d+)"""?\s*$/);
-
-                if (priceMatch) {
-                    price = parseFloat(priceMatch[1].replace(',', '.'));
-                } else {
-                    return; // Se não encontrar preço no bloco, ignora
-                }
-                
-                // Constrói a descrição
-                let description = block.map(line =>
-                    line.replace(/,""?[^"]+""?\s*$/, '') // Remove a parte do preço
-                        .replace(/"/g, '')
-                        .replace(/,/g, ' ')
-                        .replace(/\s\s+/g, ' ')
-                        .trim()
-                ).join(' ').trim();
-                
-                if (description.startsWith(id)) {
-                    description = description.substring(id.length).replace(/^-/, '').trim();
-                }
-
-                if (id && description && !isNaN(price)) {
-                    products.push({ id, description, price, originalPrice: price });
-                }
-            };
-
-            const parseCSV = (csvText) => {
-                try {
-                    const lines = csvText.trim().replace(/\r/g, '').split('\n');
-                    const products = [];
-                    
-                    const companyNameLine = lines.find(line => line.includes('LOURENCO E SILVA'));
-                    const companyName = companyNameLine ? companyNameLine.split(',').map(s => s.replace(/"/g, '').trim()).filter(s => s.includes('LOURENCO E SILVA'))[0] || 'Nome da Empresa' : 'Nome da Empresa';
-                    const cnpjLine = lines.find(line => line.includes('CNPJ'));
-                    const cnpj = cnpjLine ? cnpjLine.split('IE')[0].replace(/"/g, '').replace(/,/g, ' ').replace('CNPJ :', '').trim() : 'CNPJ não encontrado';
-                    companyInfoElement.innerText = `${companyName} - CNPJ: ${cnpj}`;
-                    
-                    let currentProductBlock = [];
-                    const idRegex = /^"?(\d{5})/;
-
-                    for (const line of lines) {
-                        const trimmedLine = line.trim();
-                        if (!trimmedLine || trimmedLine.includes("Pág:") || trimmedLine.includes("Usuário CLAUDIO") || trimmedLine.includes("Descricao,,Ncm,No.")) {
-                            continue;
-                        }
-
-                        if (idRegex.test(trimmedLine)) {
-                            // Encontrou uma linha que parece ser um novo produto.
-                            // Processa o bloco anterior antes de começar um novo.
-                            if (currentProductBlock.length > 0) {
-                                processProductBlock(currentProductBlock, products);
-                            }
-                            // Inicia um novo bloco.
-                            currentProductBlock = [trimmedLine];
-                        } else if (currentProductBlock.length > 0) {
-                            // É uma linha de continuação, adiciona ao bloco.
-                            currentProductBlock.push(trimmedLine);
-                        }
-                    }
-                    // Processa o último bloco de produto no final do arquivo.
-                    if (currentProductBlock.length > 0) {
-                        processProductBlock(currentProductBlock, products);
-                    }
-
-                    if (products.length === 0) { throw new Error("Nenhum produto foi lido. Verifique o formato do arquivo CSV."); }
-                    return products;
-
-                } catch (err) {
-                    throw new Error(`Erro fatal ao analisar o CSV: ${err.message}`);
-                }
-            };
-
-            const loadProducts = async () => {
-                loadingElement.style.display = 'block';
-                initialMessage.style.display = 'none';
-                try {
-                    const response = await fetch('produtos.csv?t=' + new Date().getTime());
-                    if (!response.ok) { throw new Error(`Arquivo 'produtos.csv' não encontrado. Status: ${response.status}`); }
-                    const csvText = await response.text();
-                    if (!csvText) { throw new Error("O arquivo 'produtos.csv' está vazio."); }
-                    allProducts = parseCSV(csvText);
-                    if(allProducts.length === 0){
-                        showError("Nenhum produto foi lido. Verifique o formato do arquivo CSV.");
-                    }
-                } catch (err) { showError(err.message); }
-                loadingElement.style.display = 'none';
-            };
-            
-            const renderProducts = (products) => {
-                productListElement.innerHTML = '';
-                if(products.length === 0 && searchInputElement.value.length >= 3) {
-                     initialMessage.innerHTML = '<p>Nenhum produto encontrado.</p>';
-                     initialMessage.style.display = 'block';
-                } else if (searchInputElement.value.length < 3) {
-                    initialMessage.innerHTML = '<p>A lista de produtos aparecerá aqui assim que você começar a digitar.</p>';
-                    initialMessage.style.display = 'block';
-                } else {
-                    initialMessage.style.display = 'none';
-                }
-
-                products.forEach(product => {
-                    const card = document.createElement('div');
-                    card.className = 'product-card';
-                    card.innerHTML = `<div class="product-description" title="${product.description}">${product.description}</div><div><div class="product-price">${formatCurrency(product.price)}</div><button class="add-to-cart-btn" data-id="${product.id}">Adicionar</button></div>`;
-                    productListElement.appendChild(card);
-                });
-            };
-            
-            const addToCart = (productId) => {
-                const product = allProducts.find(p => p.id === productId);
-                 if (!product) {
-                    showMessage("Erro: Não foi possível adicionar este produto.");
-                    return;
-                }
-                const existingCartItemIndex = cart.findIndex(item => item.id === productId);
-
-                if (existingCartItemIndex > -1) {
-                    cart[existingCartItemIndex].quantity++;
-                } else {
-                    cart.push({ ...product, quantity: 1, price: product.originalPrice });
-                }
-                renderCart();
-            };
-
-            const formatCurrency = (value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            
-            const renderCart = () => {
-                cartItemsElement.innerHTML = '';
-                let subtotal = 0;
-                if (cart.length === 0) {
-                    cartItemsElement.innerHTML = '<li>Seu carrinho está vazio.</li>';
-                } else {
-                    cart.forEach((item, index) => {
-                        const li = document.createElement('li');
-                        li.className = 'cart-item';
-                        const itemSubtotal = item.quantity * item.price;
-                        subtotal += itemSubtotal;
-                        li.innerHTML = `
-                            <div class="cart-item-info">
-                                <div class="cart-item-details">
-                                    <span>${item.description}</span><br>
-                                    <small>${item.quantity} x ${formatCurrency(item.price)} = ${formatCurrency(itemSubtotal)}</small>
-                                </div>
-                                <div class="cart-item-controls">
-                                    <button class="quantity-btn" data-index="${index}" data-change="-1">-</button>
-                                    <span>${item.quantity}</span>
-                                    <button class="quantity-btn" data-index="${index}" data-change="1">+</button>
-                                    <button class="remove-btn" data-index="${index}">×</button>
-                                </div>
-                            </div>
-                            <div class="cart-item-price-editor">
-                                <label for="price-${index}">Preço Unit.:</label>
-                                <input type="number" class="cart-item-price" id="price-${index}" data-index="${index}" value="${item.price.toFixed(2)}" step="0.01">
-                            </div>
-                        `;
-                        cartItemsElement.appendChild(li);
-                    });
-                }
-                const total = subtotal - discount;
-                cartTotalElement.textContent = formatCurrency(total > 0 ? total : 0);
-            };
-
-            const updateCart = (itemIndex, change) => {
-                 const cartItem = cart[itemIndex];
-                 if (cartItem) {
-                     cartItem.quantity += change;
-                     if(cartItem.quantity <= 0) { cart.splice(itemIndex, 1); }
-                 }
-                 renderCart();
-            };
-            
-            const removeFromCart = (itemIndex) => {
-                cart.splice(itemIndex, 1);
-                renderCart();
-            };
-
-            const updateItemPrice = (itemIndex, newPrice) => {
-                const cartItem = cart[itemIndex];
-                if(cartItem && newPrice >= 0) { cartItem.price = newPrice; }
-                renderCart();
-            };
-
-            function generateQuoteText() {
-                if (cart.length === 0) { return ""; }
-                let subtotal = 0;
-                let quote = `*Orçamento - ${companyInfoElement.innerText.trim()}*\n\n`;
-                quote += "Olá! Segue o orçamento solicitado:\n\n";
-                cart.forEach(item => {
-                    const itemTotal = item.quantity * item.price;
-                    subtotal += itemTotal;
-                    quote += `*Item:* ${item.description}\n`;
-                    quote += `*Qtd:* ${item.quantity} | *Valor Unit:* ${formatCurrency(item.price)} | *Subtotal:* ${formatCurrency(itemTotal)}\n\n`;
-                });
-                const total = subtotal - discount;
-                quote += "--------------------\n";
-                quote += `*Subtotal:* ${formatCurrency(subtotal)}\n`;
-                if(discount > 0) { quote += `*Desconto:* -${formatCurrency(discount)}\n`; }
-                quote += `*Total do Pedido: ${formatCurrency(total > 0 ? total : 0)}*`;
-                return quote;
-            }
-
-            // --- Event Listeners ---
-            searchInputElement.addEventListener('input', () => {
-                const searchTerm = searchInputElement.value.toLowerCase();
-                if (searchTerm.length >= 3) {
-                    initialMessage.style.display = 'none';
-                    const filteredProducts = allProducts.filter(p => p.description.toLowerCase().includes(searchTerm));
-                    renderProducts(filteredProducts);
-                } else {
-                    renderProducts([]); 
-                    initialMessage.style.display = 'block';
-                }
-            });
-            cartItemsElement.addEventListener('click', (e) => { const t = e.target; const index = parseInt(t.dataset.index, 10); if (isNaN(index)) return; if (t.classList.contains('quantity-btn')) { updateCart(index, parseInt(t.dataset.change, 10)); } if (t.classList.contains('remove-btn')) { removeFromCart(index); } });
-            productListElement.addEventListener('click', (e) => { if (e.target.classList.contains('add-to-cart-btn')) { addToCart(e.target.dataset.id); } });
-            cartItemsElement.addEventListener('change', (e) => { const t = e.target; if (t.classList.contains('cart-item-price')) { const index = parseInt(t.dataset.index, 10); const newPrice = parseFloat(t.value); if (!isNaN(index) && !isNaN(newPrice)) { updateItemPrice(index, newPrice); } } });
-            discountInput.addEventListener('input', () => { const value = parseFloat(discountInput.value); discount = isNaN(value) || value < 0 ? 0 : value; renderCart(); });
-            whatsappBtn.addEventListener('click', () => { const quote = generateQuoteText(); if (!quote) { showMessage("Seu carrinho está vazio."); return; } let phone = whatsappNumberInput.value.replace(/\D/g, ''); if (phone.length < 10) { showMessage("Digite um número de telefone válido com DDD."); whatsappNumberInput.focus(); return; } if (!phone.startsWith('55')) { phone = '55' + phone; } window.open(`https://wa.me/${phone}?text=${encodeURIComponent(quote)}`, '_blank'); });
-            copyBtn.addEventListener('click', () => { const quote = generateQuoteText(); if (!quote) { showMessage("Seu carrinho está vazio."); return; } quoteTextarea.value = quote; quoteTextarea.select(); document.execCommand('copy'); showMessage("Orçamento copiado!"); });
-            
-            loadProducts();
-            renderCart();
-        });
+        // --- TODO: Javascript Logic goes here ---
     </script>
 </body>
 </html>
