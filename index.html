@@ -23,7 +23,6 @@
 
     <div id="app-container" class="max-w-lg mx-auto bg-gray-100 shadow-lg min-h-screen">
         <header class="bg-black text-white p-4 flex items-center shadow-md sticky top-0 z-10">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="cursor-pointer"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             <h1 class="text-lg font-semibold uppercase mx-auto tracking-wider">Busca de Itens</h1>
         </header>
 
@@ -81,13 +80,17 @@
                     <span class="font-semibold text-gray-500">QUANTIDADE:</span>
                     <div class="flex items-center space-x-3">
                         <button id="modal-qty-minus" class="w-8 h-8 rounded-full border bg-gray-200 font-bold text-lg">-</button>
-                        <span id="modal-qty" class="font-bold text-lg w-8 text-center">1</span>
+                        <input type="number" id="modal-qty" value="1" class="font-bold text-lg w-12 text-center border rounded-md">
                         <button id="modal-qty-plus" class="w-8 h-8 rounded-full border bg-green-500 text-white font-bold text-lg">+</button>
                     </div>
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="font-semibold text-gray-500">VALOR:</span>
                     <input type="number" id="modal-item-price" class="w-24 text-right border rounded-md p-1 font-semibold text-green-600" step="0.01">
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="font-semibold text-gray-500">DESCONTO (%):</span>
+                    <input type="number" id="modal-item-discount" class="w-24 text-right border rounded-md p-1" placeholder="0">
                 </div>
                 <div class="flex justify-between items-center font-bold text-lg border-t pt-2">
                     <span class="text-gray-600">VALOR TOTAL:</span>
@@ -118,10 +121,11 @@
             const modal = document.getElementById('add-item-modal');
             const modalItemName = document.getElementById('modal-item-name');
             const modalItemManufacturer = document.getElementById('modal-item-manufacturer');
-            const modalQty = document.getElementById('modal-qty');
+            const modalQtyInput = document.getElementById('modal-qty');
             const modalQtyMinus = document.getElementById('modal-qty-minus');
             const modalQtyPlus = document.getElementById('modal-qty-plus');
             const modalItemPrice = document.getElementById('modal-item-price');
+            const modalItemDiscount = document.getElementById('modal-item-discount');
             const modalTotalPrice = document.getElementById('modal-total-price');
             const modalAddBtn = document.getElementById('modal-add-btn');
             const modalCancelBtn = document.getElementById('modal-cancel-btn');
@@ -135,16 +139,14 @@
             const showMessage = (text) => {
                 messageBox.textContent = text;
                 messageBox.classList.remove('opacity-0');
-                setTimeout(() => { messageBox.classList.add('opacity-0'); }, 2000);
+                setTimeout(() => { messageBox.classList.add('opacity-0'); }, 3000);
             };
-
-            // --- VERSÃO FINAL E CORRIGIDA DO PARSER ---
+            
             const parseCSV = (csvText) => {
                 const lines = csvText.trim().replace(/\r/g, '').split('\n');
                 const products = [];
                 let currentBlock = [];
-
-                const idRegex = /^"?(\d{5})/;
+                const idRegex = /^"?(\d+)\s*-\s*/;
                 const priceRegex = /,"(\d+,\d+)"$|,""(\d+,\d+)"""?$/;
                 const junkLineRegex = /Pág:|Usuário CLAUDIO|Descricao,,Ncm,No.|LOURENCO E SILVA|CNPJ :/
 
@@ -164,33 +166,40 @@
                     const id = idMatch[1];
                     
                     let manufacturer = 'N/A';
-                    const manuParts = fullText.split(' UN ')[0].split(/,"|,""|,,/);
-                    if (manuParts.length > 1) {
-                         const potentialManuf = manuParts[manuParts.length - 1].trim().split(' ');
-                         manufacturer = potentialManuf.find(p => p.length > 2 && isNaN(p)) || potentialManuf[0] || 'N/A';
+                    const manuParts = fullText.split(/,|\s/);
+                    for(let i = manuParts.length - 1; i >= 0; i--) {
+                        let part = manuParts[i].replace(/"/g, '').trim();
+                        if(part.length > 2 && isNaN(part) && part === part.toUpperCase()) {
+                            manufacturer = part;
+                            break;
+                        }
                     }
+                    if(manufacturer === 'N/A') manufacturer = 'Genérico';
 
                     let description = block.map(line => 
-                        line.replace(priceRegex, '')
-                            .replace(/"/g, '').replace(/,/g, ' ').replace(/\s\s+/g, ' ').trim()
+                        line.replace(priceRegex, '').replace(/"/g, '').replace(/,/g, ' ').replace(/\s\s+/g, ' ').trim()
                     ).join(' ').trim();
                     
                     if (description.startsWith(id)) {
                         description = description.substring(id.length).replace(/^-/, '').trim();
                     }
-                    description = description.split(manufacturer)[0].trim();
+                    if (manufacturer !== 'N/A') {
+                       const manuIndex = description.toUpperCase().lastIndexOf(manufacturer);
+                       if (manuIndex > -1) {
+                         description = description.substring(0, manuIndex).trim();
+                       }
+                    }
                     
                     const uuid = 'prod-' + (products.length + 1);
-                    if (id && description && !isNaN(price)) {
+                    if (id && description && !isNaN(price) && description.length > 0) {
                         products.push({ id, uuid, description, manufacturer, price, originalPrice: price });
                     }
                 };
 
                 for (const line of lines) {
                     const trimmed = line.trim();
-                    if (!trimmed || junkLineRegex.test(trimmed) || trimmed.split(',').every(c => c === '""' || c === '')) {
-                        continue;
-                    }
+                    if (!trimmed || junkLineRegex.test(trimmed) || trimmed.split(',').every(c => c === '""' || c === '')) continue;
+                    
                     if (idRegex.test(trimmed)) {
                         processBlock(currentBlock);
                         currentBlock = [trimmed];
@@ -270,16 +279,18 @@
             };
 
             const updateModalTotal = () => {
-                const qty = parseInt(modalQty.textContent);
+                const qty = parseInt(modalQtyInput.value) || 1;
                 const price = parseFloat(modalItemPrice.value) || 0;
-                modalTotalPrice.textContent = formatCurrency(qty * price);
+                const discountPercent = parseFloat(modalItemDiscount.value) || 0;
+                const finalPricePerItem = price * (1 - (discountPercent / 100));
+                modalTotalPrice.textContent = formatCurrency(qty * finalPricePerItem);
             };
             
             const openModal = (product) => {
                 currentModalProduct = product;
                 modalItemName.textContent = product.description.substring(0, 25) + '...';
                 modalItemManufacturer.textContent = product.manufacturer;
-                modalQty.textContent = '1';
+                modalQtyInput.value = '1';
                 modalItemPrice.value = product.originalPrice.toFixed(2);
                 modalItemDiscount.value = '';
                 updateModalTotal();
@@ -290,11 +301,10 @@
             
             const addToCart = () => {
                 if (!currentModalProduct) return;
-                const qty = parseInt(modalQty.textContent);
+                const qty = parseInt(modalQtyInput.value) || 1;
                 const price = parseFloat(modalItemPrice.value);
                 const discountPercent = parseFloat(modalItemDiscount.value) || 0;
                 const finalPricePerItem = price * (1 - (discountPercent / 100));
-
                 const existingItem = cart.find(item => item.uuid === currentModalProduct.uuid && item.price === finalPricePerItem);
                 
                 if (existingItem) {
@@ -324,8 +334,9 @@
                 if (btn) { cart.splice(btn.dataset.index, 1); renderCart(); }
             });
 
-            modalQtyPlus.addEventListener('click', () => { modalQty.textContent = parseInt(modalQty.textContent) + 1; updateModalTotal(); });
-            modalQtyMinus.addEventListener('click', () => { if (parseInt(modalQty.textContent) > 1) { modalQty.textContent = parseInt(modalQty.textContent) - 1; updateModalTotal(); }});
+            modalQtyPlus.addEventListener('click', () => { modalQtyInput.value = parseInt(modalQtyInput.value || 0) + 1; updateModalTotal(); });
+            modalQtyMinus.addEventListener('click', () => { let qty = parseInt(modalQtyInput.value || 0); if (qty > 1) { modalQtyInput.value = qty - 1; updateModalTotal(); }});
+            modalQtyInput.addEventListener('input', updateModalTotal);
             modalItemPrice.addEventListener('input', updateModalTotal);
             modalItemDiscount.addEventListener('input', updateModalTotal);
             modalAddBtn.addEventListener('click', addToCart);
@@ -363,7 +374,6 @@
                 const text = generateQuoteText();
                 if (!text) return;
                 document.getElementById('quote-text').value = text;
-                document.getElementById('quote-text').select();
                 document.execCommand('copy');
                 showMessage("Orçamento copiado!");
             });
