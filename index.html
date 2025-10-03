@@ -36,12 +36,9 @@
         </div>
         
         <div class="flex-grow p-4">
-            <div id="product-list" class="space-y-2">
-                 <p id="initial-message" class="text-center text-gray-500 py-4">Digite para buscar...</p>
-            </div>
-
-            <div id="cart-section" class="mt-6">
-                <h2 class="text-lg font-semibold mb-2 text-gray-700 border-t pt-4">MEU PEDIDO</h2>
+            <!-- Seção do Carrinho (Agora no topo) -->
+            <div id="cart-section">
+                <h2 class="text-lg font-semibold mb-2 text-gray-700">MEU PEDIDO</h2>
                 <div id="cart-items" class="space-y-2">
                     <p class="text-gray-500">Seu pedido está vazio.</p>
                 </div>
@@ -61,6 +58,14 @@
                     <input type="tel" id="whatsapp-number" placeholder="DDD + Número do cliente" class="w-full p-2 border rounded-md mb-2">
                     <button id="whatsapp-btn" class="w-full bg-green-500 text-white font-bold py-2 px-4 rounded-md hover:bg-green-600">Enviar Orçamento</button>
                     <button id="copy-btn" class="w-full bg-gray-500 text-white font-bold py-2 px-4 rounded-md mt-2 hover:bg-gray-600">Copiar Orçamento</button>
+                </div>
+            </div>
+            
+            <!-- Lista de Produtos (Agora embaixo) -->
+            <div id="search-results-section" class="mt-6">
+                <h2 class="text-lg font-semibold mb-2 text-gray-700 border-t pt-4">RESULTADOS DA BUSCA</h2>
+                <div id="product-list" class="space-y-2">
+                     <p id="initial-message" class="text-center text-gray-500 py-4">Digite para buscar...</p>
                 </div>
             </div>
         </div>
@@ -146,7 +151,7 @@
                 const lines = csvText.trim().replace(/\r/g, '').split('\n');
                 const products = [];
                 let currentBlock = [];
-                const idRegex = /^"?(\d+)\s*-\s*/;
+                const idRegex = /^"?(\d{5})/;
                 const priceRegex = /,"(\d+,\d+)"$|,""(\d+,\d+)"""?$/;
                 const junkLineRegex = /Pág:|Usuário CLAUDIO|Descricao,,Ncm,No.|LOURENCO E SILVA|CNPJ :/
 
