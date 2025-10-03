@@ -251,7 +251,44 @@
                 errorElement.style.display = 'block';
             };
 
-            // --- VERSÃO FINAL DO PARSER DE CSV ---
+            const processProductBlock = (block, products) => {
+                if (block.length === 0) return;
+
+                const firstLine = block[0];
+                const idMatch = firstLine.match(/^"?(\d{5})/);
+                if (!idMatch) return; // Bloco inválido se a primeira linha não tem ID
+                
+                const id = idMatch[1];
+                let price = null;
+
+                // Combina o bloco em um único texto para facilitar a busca
+                const fullTextBlock = block.join(' ');
+                const priceMatch = fullTextBlock.match(/,"(\d+,\d+)"\s*$/) || fullTextBlock.match(/,""(\d+,\d+)"""?\s*$/);
+
+                if (priceMatch) {
+                    price = parseFloat(priceMatch[1].replace(',', '.'));
+                } else {
+                    return; // Se não encontrar preço no bloco, ignora
+                }
+                
+                // Constrói a descrição
+                let description = block.map(line =>
+                    line.replace(/,""?[^"]+""?\s*$/, '') // Remove a parte do preço
+                        .replace(/"/g, '')
+                        .replace(/,/g, ' ')
+                        .replace(/\s\s+/g, ' ')
+                        .trim()
+                ).join(' ').trim();
+                
+                if (description.startsWith(id)) {
+                    description = description.substring(id.length).replace(/^-/, '').trim();
+                }
+
+                if (id && description && !isNaN(price)) {
+                    products.push({ id, description, price, originalPrice: price });
+                }
+            };
+
             const parseCSV = (csvText) => {
                 try {
                     const lines = csvText.trim().replace(/\r/g, '').split('\n');
@@ -263,72 +300,41 @@
                     const cnpj = cnpjLine ? cnpjLine.split('IE')[0].replace(/"/g, '').replace(/,/g, ' ').replace('CNPJ :', '').trim() : 'CNPJ não encontrado';
                     companyInfoElement.innerText = `${companyName} - CNPJ: ${cnpj}`;
                     
-                    let currentProduct = null;
+                    let currentProductBlock = [];
+                    const idRegex = /^"?(\d{5})/;
 
                     for (const line of lines) {
                         const trimmedLine = line.trim();
-                        if (!trimmedLine || trimmedLine === '""' || trimmedLine.includes("Pág:") || trimmedLine.includes("Usuário CLAUDIO") || trimmedLine.includes("Descricao,,Ncm,No.")) {
+                        if (!trimmedLine || trimmedLine.includes("Pág:") || trimmedLine.includes("Usuário CLAUDIO") || trimmedLine.includes("Descricao,,Ncm,No.")) {
                             continue;
                         }
 
-                        // Tenta encontrar ID e preço em cada linha
-                        const idMatch = trimmedLine.match(/^"?(\d{5})/);
-                        const priceMatch = trimmedLine.match(/,"(\d+,\d+)"$/) || trimmedLine.match(/,""(\d+,\d+)"""?$/);
-                        
-                        if (idMatch) {
-                            // Se já tem um produto sendo construído, salva-o
-                            if (currentProduct && currentProduct.price !== null) {
-                                products.push(currentProduct);
+                        if (idRegex.test(trimmedLine)) {
+                            // Encontrou uma linha que parece ser um novo produto.
+                            // Processa o bloco anterior antes de começar um novo.
+                            if (currentProductBlock.length > 0) {
+                                processProductBlock(currentProductBlock, products);
                             }
-                            
-                            // Inicia um novo produto
-                            currentProduct = {
-                                id: idMatch[1],
-                                description: '',
-                                price: null,
-                                originalPrice: null
-                            };
-                        }
-
-                        if (currentProduct) {
-                             // Limpa a linha para adicionar à descrição
-                            let cleanLine = trimmedLine.replace(/"/g, '').replace(/,/g, ' ').replace(/\s+/g, ' ').trim();
-                            
-                            // Remove o ID da descrição
-                            if (cleanLine.startsWith(currentProduct.id)) {
-                                cleanLine = cleanLine.substring(currentProduct.id.length).replace(/^-/, '').trim();
-                            }
-                            
-                            // Remove o preço e dados extras da descrição
-                            if (priceMatch) {
-                                const priceStr = priceMatch[0].replace(/"/g, '').replace(/,/g, '');
-                                const priceIndex = cleanLine.lastIndexOf(priceStr);
-                                if (priceIndex > -1) {
-                                     cleanLine = cleanLine.substring(0, priceIndex).trim();
-                                }
-                                currentProduct.price = parseFloat(priceMatch[1].replace(',', '.'));
-                                currentProduct.originalPrice = currentProduct.price;
-                            }
-                            
-                            // Adiciona a linha limpa à descrição
-                            if(cleanLine) {
-                                currentProduct.description = (currentProduct.description + ' ' + cleanLine).trim();
-                            }
+                            // Inicia um novo bloco.
+                            currentProductBlock = [trimmedLine];
+                        } else if (currentProductBlock.length > 0) {
+                            // É uma linha de continuação, adiciona ao bloco.
+                            currentProductBlock.push(trimmedLine);
                         }
                     }
-
-                    // Adiciona o último produto se ele for válido
-                    if (currentProduct && currentProduct.price !== null) {
-                        products.push(currentProduct);
+                    // Processa o último bloco de produto no final do arquivo.
+                    if (currentProductBlock.length > 0) {
+                        processProductBlock(currentProductBlock, products);
                     }
-                    
-                    return products.filter(p => p.id && p.description && p.price > 0);
+
+                    if (products.length === 0) { throw new Error("Nenhum produto foi lido. Verifique o formato do arquivo CSV."); }
+                    return products;
 
                 } catch (err) {
                     throw new Error(`Erro fatal ao analisar o CSV: ${err.message}`);
                 }
             };
-            
+
             const loadProducts = async () => {
                 loadingElement.style.display = 'block';
                 initialMessage.style.display = 'none';
@@ -368,10 +374,10 @@
             const addToCart = (productId) => {
                 const product = allProducts.find(p => p.id === productId);
                  if (!product) {
-                    showMessage("Erro: Não foi possível adicionar o produto.");
+                    showMessage("Erro: Não foi possível adicionar este produto.");
                     return;
                 }
-                const existingCartItemIndex = cart.findIndex(item => item.id === productId && item.originalPrice === product.originalPrice);
+                const existingCartItemIndex = cart.findIndex(item => item.id === productId);
 
                 if (existingCartItemIndex > -1) {
                     cart[existingCartItemIndex].quantity++;
@@ -439,8 +445,7 @@
                 renderCart();
             };
 
-            function generateQuoteText() { /* ...código original... */ }
-            generateQuoteText = () => {
+            function generateQuoteText() {
                 if (cart.length === 0) { return ""; }
                 let subtotal = 0;
                 let quote = `*Orçamento - ${companyInfoElement.innerText.trim()}*\n\n`;
@@ -463,13 +468,16 @@
             searchInputElement.addEventListener('input', () => {
                 const searchTerm = searchInputElement.value.toLowerCase();
                 if (searchTerm.length >= 3) {
+                    initialMessage.style.display = 'none';
                     const filteredProducts = allProducts.filter(p => p.description.toLowerCase().includes(searchTerm));
                     renderProducts(filteredProducts);
                 } else {
                     renderProducts([]); 
+                    initialMessage.style.display = 'block';
                 }
             });
             cartItemsElement.addEventListener('click', (e) => { const t = e.target; const index = parseInt(t.dataset.index, 10); if (isNaN(index)) return; if (t.classList.contains('quantity-btn')) { updateCart(index, parseInt(t.dataset.change, 10)); } if (t.classList.contains('remove-btn')) { removeFromCart(index); } });
+            productListElement.addEventListener('click', (e) => { if (e.target.classList.contains('add-to-cart-btn')) { addToCart(e.target.dataset.id); } });
             cartItemsElement.addEventListener('change', (e) => { const t = e.target; if (t.classList.contains('cart-item-price')) { const index = parseInt(t.dataset.index, 10); const newPrice = parseFloat(t.value); if (!isNaN(index) && !isNaN(newPrice)) { updateItemPrice(index, newPrice); } } });
             discountInput.addEventListener('input', () => { const value = parseFloat(discountInput.value); discount = isNaN(value) || value < 0 ? 0 : value; renderCart(); });
             whatsappBtn.addEventListener('click', () => { const quote = generateQuoteText(); if (!quote) { showMessage("Seu carrinho está vazio."); return; } let phone = whatsappNumberInput.value.replace(/\D/g, ''); if (phone.length < 10) { showMessage("Digite um número de telefone válido com DDD."); whatsappNumberInput.focus(); return; } if (!phone.startsWith('55')) { phone = '55' + phone; } window.open(`https://wa.me/${phone}?text=${encodeURIComponent(quote)}`, '_blank'); });
