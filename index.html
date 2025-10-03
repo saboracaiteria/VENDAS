@@ -2,109 +2,101 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Busca de Itens</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root {
-            --primary: #1a202c;
-            --secondary: #a0aec0;
-            --success: #38a169;
-            --danger: #e53e3e;
-            --background: #f7fafc;
-        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background-color: var(--background);
         }
-        .modal-backdrop {
-            background-color: rgba(0, 0, 0, 0.5);
+        input[type=search]::-webkit-search-cancel-button {
+            -webkit-appearance: none;
+            height: 1.5em;
+            width: 1.5em;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239CA3AF'><path d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/></svg>");
+            background-repeat: no-repeat;
+            cursor: pointer;
         }
     </style>
 </head>
-<body class="bg-gray-100">
+<body class="bg-gray-300">
 
-    <div id="app-container" class="max-w-md mx-auto bg-white shadow-lg min-h-screen">
-        <!-- Cabeçalho -->
-        <header class="bg-gray-800 text-white p-4 flex items-center shadow-md">
+    <div id="app-container" class="max-w-lg mx-auto bg-gray-100 shadow-lg min-h-screen">
+        <header class="bg-black text-white p-4 flex items-center shadow-md sticky top-0 z-10">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="cursor-pointer"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-            <h1 class="text-lg font-semibold uppercase mx-auto">Busca de Itens</h1>
+            <h1 class="text-lg font-semibold uppercase mx-auto tracking-wider">Busca de Itens</h1>
         </header>
 
-        <!-- Barra de Busca -->
-        <div class="p-4">
+        <div class="p-4 bg-white border-b border-gray-200">
             <div class="relative">
-                <input type="search" id="search-input" placeholder="Nome item..." class="w-full pl-4 pr-10 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400">
-                <div class="absolute top-0 right-0 mt-2 mr-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                </div>
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M10 18a7.952 7.952 0 0 0 4.897-1.688l4.396 4.396l1.414-1.414l-4.396-4.396A7.952 7.952 0 0 0 18 10c0-4.411-3.589-8-8-8s-8 3.589-8 8s3.589 8 8 8zm0-14c3.309 0 6 2.691 6 6s-2.691 6-6 6s-6-2.691-6-6s2.691-6 6-6z"/></svg>
+                </span>
+                <input type="search" id="search-input" placeholder="Nome item..." class="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-400">
             </div>
         </div>
         
-        <!-- Lista de Produtos (Resultados da Busca) -->
-        <div id="product-list" class="px-4 pb-4">
-            <!-- Os resultados da busca aparecerão aqui -->
-        </div>
-
-        <!-- Seção do Carrinho -->
-        <div id="cart-section" class="p-4 border-t-2 border-gray-200">
-            <h2 class="text-lg font-semibold mb-2">MEU PEDIDO</h2>
-            <div id="cart-items">
-                <p class="text-gray-500">Seu pedido está vazio.</p>
-            </div>
-            
-            <div class="totals-section mt-4 pt-4 border-t">
-                 <div class="flex justify-between items-center mb-2">
-                    <label for="discount-input" class="text-gray-600">Desconto (R$):</label>
-                    <input type="number" id="discount-input" placeholder="0.00" class="w-24 text-right border rounded-md p-1">
-                </div>
-                <div id="cart-total" class="flex justify-between items-center font-bold text-xl">
-                    <span>Total:</span>
-                    <strong id="total-value">R$ 0,00</strong>
-                </div>
+        <div class="flex-grow p-4">
+            <div id="product-list" class="space-y-2">
+                 <p id="initial-message" class="text-center text-gray-500 py-4">Digite para buscar...</p>
             </div>
 
-            <div class="whatsapp-section mt-4">
-                <input type="tel" id="whatsapp-number" placeholder="DDD + Número do cliente" class="w-full p-2 border rounded-md mb-2">
-                <button id="whatsapp-btn" class="w-full bg-green-500 text-white font-bold py-2 px-4 rounded-md hover:bg-green-600">Enviar Orçamento</button>
-                <button id="copy-btn" class="w-full bg-gray-500 text-white font-bold py-2 px-4 rounded-md mt-2 hover:bg-gray-600">Copiar Orçamento</button>
+            <div id="cart-section" class="mt-6">
+                <h2 class="text-lg font-semibold mb-2 text-gray-700 border-t pt-4">MEU PEDIDO</h2>
+                <div id="cart-items" class="space-y-2">
+                    <p class="text-gray-500">Seu pedido está vazio.</p>
+                </div>
+                
+                <div class="totals-section mt-4 pt-4 border-t">
+                     <div class="flex justify-between items-center mb-2">
+                        <label for="discount-input" class="text-gray-600">Desconto (R$):</label>
+                        <input type="number" id="discount-input" placeholder="0.00" class="w-24 text-right border rounded-md p-1">
+                    </div>
+                    <div id="cart-total" class="flex justify-between items-center font-bold text-xl">
+                        <span>Total:</span>
+                        <strong id="total-value">R$ 0,00</strong>
+                    </div>
+                </div>
+
+                <div class="whatsapp-section mt-4">
+                    <input type="tel" id="whatsapp-number" placeholder="DDD + Número do cliente" class="w-full p-2 border rounded-md mb-2">
+                    <button id="whatsapp-btn" class="w-full bg-green-500 text-white font-bold py-2 px-4 rounded-md hover:bg-green-600">Enviar Orçamento</button>
+                    <button id="copy-btn" class="w-full bg-gray-500 text-white font-bold py-2 px-4 rounded-md mt-2 hover:bg-gray-600">Copiar Orçamento</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal de Adição de Item -->
-    <div id="add-item-modal" class="fixed inset-0 z-50 items-center justify-center flex hidden modal-backdrop">
-        <div class="bg-white rounded-lg shadow-xl w-11/12 max-w-sm p-4">
-            <h3 id="modal-item-name" class="font-bold text-center text-lg mb-4">COPO VIDRO VERDE</h3>
-            <div class="space-y-3 text-sm">
+    <div id="add-item-modal" class="fixed inset-0 z-50 items-center justify-center flex hidden bg-black bg-opacity-50">
+        <div class="bg-white rounded-lg shadow-xl w-11/12 max-w-sm">
+            <div class="bg-gray-200 p-3 rounded-t-lg">
+                <h3 id="modal-item-name" class="font-bold text-center text-gray-700"></h3>
+            </div>
+            <div class="p-4 space-y-3 text-sm">
                 <div class="flex justify-between items-center">
-                    <span class="font-semibold text-gray-600">ITEM:</span>
-                    <span id="modal-item-desc" class="text-right">COPO VIDRO AZUL</span>
+                    <span class="font-semibold text-gray-500">FABRICANTE:</span>
+                    <span id="modal-item-manufacturer" class="text-right font-semibold text-gray-800"></span>
                 </div>
                 <div class="flex justify-between items-center">
-                    <span class="font-semibold text-gray-600">QUANTIDADE:</span>
+                    <span class="font-semibold text-gray-500">QUANTIDADE:</span>
                     <div class="flex items-center space-x-3">
-                        <button id="modal-qty-minus" class="w-8 h-8 rounded-full border bg-gray-200">-</button>
-                        <span id="modal-qty" class="font-bold text-lg">1</span>
-                        <button id="modal-qty-plus" class="w-8 h-8 rounded-full border bg-green-500 text-white">+</button>
+                        <button id="modal-qty-minus" class="w-8 h-8 rounded-full border bg-gray-200 font-bold text-lg">-</button>
+                        <span id="modal-qty" class="font-bold text-lg w-8 text-center">1</span>
+                        <button id="modal-qty-plus" class="w-8 h-8 rounded-full border bg-green-500 text-white font-bold text-lg">+</button>
                     </div>
                 </div>
                 <div class="flex justify-between items-center">
-                    <span class="font-semibold text-gray-600">VALOR:</span>
-                    <span id="modal-item-price">R$ 10,00</span>
+                    <span class="font-semibold text-gray-500">VALOR:</span>
+                    <input type="number" id="modal-item-price" class="w-24 text-right border rounded-md p-1 font-semibold text-green-600" step="0.01">
                 </div>
-                 <div class="flex justify-between items-center">
-                    <span class="font-semibold text-gray-600">DESCONTO ITEM (%):</span>
-                    <input type="number" id="modal-item-discount" class="w-20 text-right border rounded-md p-1" placeholder="0">
-                </div>
-                <div class="flex justify-between items-center font-bold text-lg">
+                <div class="flex justify-between items-center font-bold text-lg border-t pt-2">
                     <span class="text-gray-600">VALOR TOTAL:</span>
-                    <span id="modal-total-price">R$ 10,00</span>
+                    <span id="modal-total-price" class="text-black"></span>
                 </div>
             </div>
-            <div class="mt-6 flex flex-col space-y-2">
-                <button id="modal-add-btn" class="bg-gray-800 text-white py-3 rounded-md font-semibold">ADICIONAR</button>
-                <button id="modal-cancel-btn" class="bg-gray-300 text-gray-800 py-3 rounded-md font-semibold">CANCELAR</button>
+            <div class="p-2 flex flex-col space-y-2">
+                <button id="modal-add-btn" class="bg-black text-white py-3 rounded-md font-semibold">ADICIONAR</button>
+                <button id="modal-cancel-btn" class="bg-gray-400 text-black py-3 rounded-md font-semibold">CANCELAR</button>
             </div>
         </div>
     </div>
@@ -113,7 +105,271 @@
     <div id="message-box" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-gray-800 text-white py-2 px-4 rounded-md shadow-lg transition-opacity duration-300 opacity-0"></div>
 
     <script>
-        // --- TODO: Javascript Logic goes here ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('search-input');
+            const productListElement = document.getElementById('product-list');
+            const cartItemsElement = document.getElementById('cart-items');
+            const totalValueElement = document.getElementById('total-value');
+            const discountInput = document.getElementById('discount-input');
+            const whatsappNumberInput = document.getElementById('whatsapp-number');
+            const whatsappBtn = document.getElementById('whatsapp-btn');
+            const copyBtn = document.getElementById('copy-btn');
+            const messageBox = document.getElementById('message-box');
+            const modal = document.getElementById('add-item-modal');
+            const modalItemName = document.getElementById('modal-item-name');
+            const modalItemManufacturer = document.getElementById('modal-item-manufacturer');
+            const modalQty = document.getElementById('modal-qty');
+            const modalQtyMinus = document.getElementById('modal-qty-minus');
+            const modalQtyPlus = document.getElementById('modal-qty-plus');
+            const modalItemPrice = document.getElementById('modal-item-price');
+            const modalTotalPrice = document.getElementById('modal-total-price');
+            const modalAddBtn = document.getElementById('modal-add-btn');
+            const modalCancelBtn = document.getElementById('modal-cancel-btn');
+
+            let allProducts = [];
+            let cart = [];
+            let currentModalProduct = null;
+            let globalDiscount = 0;
+            
+            const formatCurrency = (value) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            const showMessage = (text) => {
+                messageBox.textContent = text;
+                messageBox.classList.remove('opacity-0');
+                setTimeout(() => { messageBox.classList.add('opacity-0'); }, 2000);
+            };
+
+            // --- VERSÃO FINAL E CORRIGIDA DO PARSER ---
+            const parseCSV = (csvText) => {
+                const lines = csvText.trim().replace(/\r/g, '').split('\n');
+                const products = [];
+                let currentBlock = [];
+
+                const idRegex = /^"?(\d{5})/;
+                const priceRegex = /,"(\d+,\d+)"$|,""(\d+,\d+)"""?$/;
+                const junkLineRegex = /Pág:|Usuário CLAUDIO|Descricao,,Ncm,No.|LOURENCO E SILVA|CNPJ :/
+
+                const processBlock = (block) => {
+                    if (block.length === 0) return;
+                    
+                    const fullText = block.join(' ');
+                    const priceMatch = fullText.match(priceRegex);
+                    if (!priceMatch) return;
+                    
+                    const priceStr = priceMatch[1] || priceMatch[2];
+                    const price = parseFloat(priceStr.replace(',', '.'));
+                    
+                    const idMatch = block[0].match(idRegex);
+                    if(!idMatch) return;
+                    
+                    const id = idMatch[1];
+                    
+                    let manufacturer = 'N/A';
+                    const manuParts = fullText.split(' UN ')[0].split(/,"|,""|,,/);
+                    if (manuParts.length > 1) {
+                         const potentialManuf = manuParts[manuParts.length - 1].trim().split(' ');
+                         manufacturer = potentialManuf.find(p => p.length > 2 && isNaN(p)) || potentialManuf[0] || 'N/A';
+                    }
+
+                    let description = block.map(line => 
+                        line.replace(priceRegex, '')
+                            .replace(/"/g, '').replace(/,/g, ' ').replace(/\s\s+/g, ' ').trim()
+                    ).join(' ').trim();
+                    
+                    if (description.startsWith(id)) {
+                        description = description.substring(id.length).replace(/^-/, '').trim();
+                    }
+                    description = description.split(manufacturer)[0].trim();
+                    
+                    const uuid = 'prod-' + (products.length + 1);
+                    if (id && description && !isNaN(price)) {
+                        products.push({ id, uuid, description, manufacturer, price, originalPrice: price });
+                    }
+                };
+
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (!trimmed || junkLineRegex.test(trimmed) || trimmed.split(',').every(c => c === '""' || c === '')) {
+                        continue;
+                    }
+                    if (idRegex.test(trimmed)) {
+                        processBlock(currentBlock);
+                        currentBlock = [trimmed];
+                    } else if (currentBlock.length > 0) {
+                        currentBlock.push(trimmed);
+                    }
+                }
+                processBlock(currentBlock);
+                return products;
+            };
+
+            const loadProducts = async () => {
+                showMessage("Carregando produtos...");
+                try {
+                    const response = await fetch('produtos.csv?t=' + Date.now());
+                    if (!response.ok) throw new Error(`Arquivo 'produtos.csv' não encontrado.`);
+                    const csvText = await response.text();
+                    if (!csvText) throw new Error("O arquivo 'produtos.csv' está vazio.");
+                    allProducts = parseCSV(csvText);
+                    showMessage(`${allProducts.length} produtos carregados!`);
+                } catch (err) {
+                    showMessage(err.message);
+                }
+            };
+            
+            const renderProducts = (products) => {
+                productListElement.innerHTML = '';
+                const initialMsg = document.getElementById('initial-message');
+                if (products.length > 0) {
+                    if(initialMsg) initialMsg.style.display = 'none';
+                    products.forEach(product => {
+                        const item = document.createElement('div');
+                        item.className = 'bg-white p-3 rounded-md flex justify-between items-center shadow';
+                        item.innerHTML = `
+                            <div>
+                                <p class="font-semibold text-sm text-gray-800">${product.description}</p>
+                                <p class="text-xs text-gray-500">${product.manufacturer}</p>
+                                <p class="text-green-600 font-bold mt-1">${formatCurrency(product.price)}</p>
+                            </div>
+                            <button class="add-btn w-10 h-10 bg-green-500 text-white rounded-full text-2xl font-light flex items-center justify-center" data-uuid="${product.uuid}">+</button>
+                        `;
+                        productListElement.appendChild(item);
+                    });
+                } else {
+                    if(initialMsg) initialMsg.style.display = 'block';
+                    if (searchInput.value.length >= 3) {
+                         if(initialMsg) initialMsg.textContent = 'Nenhum produto encontrado.';
+                    } else {
+                         if(initialMsg) initialMsg.textContent = 'Digite para buscar...';
+                    }
+                }
+            };
+            
+            const renderCart = () => {
+                cartItemsElement.innerHTML = '';
+                let subtotal = 0;
+                if (cart.length === 0) {
+                    cartItemsElement.innerHTML = '<p class="text-gray-500">Seu pedido está vazio.</p>';
+                } else {
+                    cart.forEach((item, index) => {
+                        const itemSubtotal = item.quantity * item.price;
+                        subtotal += itemSubtotal;
+                        const li = document.createElement('li');
+                        li.className = 'bg-white p-2 rounded-md flex justify-between items-center shadow-sm';
+                        li.innerHTML = `
+                            <div>
+                                <p class="font-semibold text-sm">${item.description}</p>
+                                <p class="text-xs text-gray-600">Qtd: ${item.quantity} | Total: ${formatCurrency(itemSubtotal)}</p>
+                            </div>
+                            <button class="remove-btn w-8 h-8 bg-red-500 text-white rounded-full text-lg flex items-center justify-center" data-index="${index}">×</button>
+                        `;
+                        cartItemsElement.appendChild(li);
+                    });
+                }
+                const total = subtotal - globalDiscount;
+                totalValueElement.textContent = formatCurrency(total > 0 ? total : 0);
+            };
+
+            const updateModalTotal = () => {
+                const qty = parseInt(modalQty.textContent);
+                const price = parseFloat(modalItemPrice.value) || 0;
+                modalTotalPrice.textContent = formatCurrency(qty * price);
+            };
+            
+            const openModal = (product) => {
+                currentModalProduct = product;
+                modalItemName.textContent = product.description.substring(0, 25) + '...';
+                modalItemManufacturer.textContent = product.manufacturer;
+                modalQty.textContent = '1';
+                modalItemPrice.value = product.originalPrice.toFixed(2);
+                modalItemDiscount.value = '';
+                updateModalTotal();
+                modal.classList.remove('hidden');
+            };
+
+            const closeModal = () => modal.classList.add('hidden');
+            
+            const addToCart = () => {
+                if (!currentModalProduct) return;
+                const qty = parseInt(modalQty.textContent);
+                const price = parseFloat(modalItemPrice.value);
+                const discountPercent = parseFloat(modalItemDiscount.value) || 0;
+                const finalPricePerItem = price * (1 - (discountPercent / 100));
+
+                const existingItem = cart.find(item => item.uuid === currentModalProduct.uuid && item.price === finalPricePerItem);
+                
+                if (existingItem) {
+                    existingItem.quantity += qty;
+                } else {
+                    cart.push({ ...currentModalProduct, quantity: qty, price: finalPricePerItem });
+                }
+                renderCart();
+                closeModal();
+            };
+
+            searchInput.addEventListener('input', () => {
+                const term = searchInput.value.toLowerCase();
+                renderProducts(term.length >= 3 ? allProducts.filter(p => p.description.toLowerCase().includes(term) || p.manufacturer.toLowerCase().includes(term)) : []);
+            });
+
+            productListElement.addEventListener('click', (e) => {
+                const btn = e.target.closest('.add-btn');
+                if (btn) {
+                    const product = allProducts.find(p => p.uuid === btn.dataset.uuid);
+                    if (product) openModal(product);
+                }
+            });
+            
+            cartItemsElement.addEventListener('click', (e) => {
+                const btn = e.target.closest('.remove-btn');
+                if (btn) { cart.splice(btn.dataset.index, 1); renderCart(); }
+            });
+
+            modalQtyPlus.addEventListener('click', () => { modalQty.textContent = parseInt(modalQty.textContent) + 1; updateModalTotal(); });
+            modalQtyMinus.addEventListener('click', () => { if (parseInt(modalQty.textContent) > 1) { modalQty.textContent = parseInt(modalQty.textContent) - 1; updateModalTotal(); }});
+            modalItemPrice.addEventListener('input', updateModalTotal);
+            modalItemDiscount.addEventListener('input', updateModalTotal);
+            modalAddBtn.addEventListener('click', addToCart);
+            modalCancelBtn.addEventListener('click', closeModal);
+            discountInput.addEventListener('input', () => { globalDiscount = parseFloat(discountInput.value) || 0; renderCart(); });
+            
+            const generateQuoteText = () => {
+                if (cart.length === 0) { showMessage("O pedido está vazio."); return null; }
+                let subtotal = 0;
+                let text = `*Orçamento*\n\n`;
+                cart.forEach(item => {
+                    const itemTotal = item.quantity * item.price;
+                    subtotal += itemTotal;
+                    text += `*${item.description}*\n`;
+                    text += `_Fabricante: ${item.manufacturer}_\n`;
+                    text += `_Qtd: ${item.quantity} x ${formatCurrency(item.price)} = ${formatCurrency(itemTotal)}_\n\n`;
+                });
+                const total = subtotal - globalDiscount;
+                text += `*Subtotal:* ${formatCurrency(subtotal)}\n`;
+                if(globalDiscount > 0) text += `*Desconto:* -${formatCurrency(globalDiscount)}\n`;
+                text += `*Total:* *${formatCurrency(total > 0 ? total : 0)}*`;
+                return text;
+            }
+
+            whatsappBtn.addEventListener('click', () => {
+                const text = generateQuoteText();
+                if (!text) return;
+                let phone = whatsappNumberInput.value.replace(/\D/g, '');
+                if (!phone) { showMessage("Digite o número do cliente."); return; }
+                if (!phone.startsWith('55')) phone = '55' + phone;
+                window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`);
+            });
+
+            copyBtn.addEventListener('click', () => {
+                const text = generateQuoteText();
+                if (!text) return;
+                document.getElementById('quote-text').value = text;
+                document.getElementById('quote-text').select();
+                document.execCommand('copy');
+                showMessage("Orçamento copiado!");
+            });
+
+            loadProducts();
+        });
     </script>
 </body>
 </html>
