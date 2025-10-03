@@ -145,7 +145,7 @@
                 setTimeout(() => { messageBox.classList.add('opacity-0'); }, 3000);
             };
             
-            const parseCSV = (csvText) => {
+             const parseCSV = (csvText) => {
                 const lines = csvText.trim().replace(/\r/g, '').split('\n');
                 const products = [];
                 let currentBlock = [];
@@ -178,7 +178,6 @@
                         }
                     }
                     if(manufacturer === 'N/A') manufacturer = 'Genérico';
-
 
                     let description = block.map(line => 
                         line.replace(priceRegex, '').replace(/"/g, '').replace(/,/g, ' ').replace(/\s\s+/g, ' ').trim()
