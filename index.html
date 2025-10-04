@@ -332,9 +332,33 @@
                 closeModal();
             };
 
+            // --- LÓGICA DE BUSCA MELHORADA ---
             searchInput.addEventListener('input', () => {
-                const term = searchInput.value.toLowerCase();
-                renderProducts(term.length >= 3 ? allProducts.filter(p => p.description.toLowerCase().includes(term) || p.id.startsWith(term)) : []);
+                const searchTerm = searchInput.value.toLowerCase().trim();
+
+                // Só busca se tiver pelo menos 3 caracteres
+                if (searchTerm.length < 3) {
+                    renderProducts([]);
+                    return;
+                }
+
+                // Divide o termo de busca em palavras individuais, ignorando espaços extras
+                const searchWords = searchTerm.split(/\s+/).filter(Boolean);
+
+                // Se não houver palavras (ex: só espaços), não faz nada
+                if (searchWords.length === 0) {
+                    renderProducts([]);
+                    return;
+                }
+                
+                // Filtra os produtos
+                const filteredProducts = allProducts.filter(product => {
+                    const productDesc = product.description.toLowerCase();
+                    // Verifica se TODAS as palavras da busca estão contidas na descrição do produto
+                    return searchWords.every(word => productDesc.includes(word));
+                });
+
+                renderProducts(filteredProducts);
             });
 
             productListElement.addEventListener('click', (e) => {
@@ -400,7 +424,9 @@
             copyBtn.addEventListener('click', () => {
                 const text = generateQuoteText();
                 if (!text) return;
-                document.getElementById('quote-text').value = text;
+                const quoteTextArea = document.getElementById('quote-text');
+                quoteTextArea.value = text;
+                quoteTextArea.select();
                 document.execCommand('copy');
                 showMessage("Orçamento copiado!");
             });
@@ -428,3 +454,4 @@
     </script>
 </body>
 </html>
+
