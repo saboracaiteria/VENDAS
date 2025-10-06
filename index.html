@@ -142,7 +142,7 @@
             const appContainer = document.getElementById('app-container');
             const searchInput = document.getElementById('search-input');
             const voiceSearchBtn = document.getElementById('voice-search-btn');
-            const floatingVoiceBtn = document.getElementById('floating-voice-btn'); // Botão flutuante
+            const floatingVoiceBtn = document.getElementById('floating-voice-btn');
             const productListElement = document.getElementById('product-list');
             const cartItemsElement = document.getElementById('cart-items');
             const totalValueElement = document.getElementById('total-value');
@@ -183,43 +183,72 @@
                 return text.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
             };
             
+            // **CORRIGIDO**: Nova função de análise de CSV, mais flexível.
             const parseCSV = (csvText) => {
                 const lines = csvText.trim().replace(/\r/g, '').split('\n');
                 const products = [];
                 let currentBlock = [];
-                const startRegex = /^"?\d+\s*-\s*/;
-                const priceRegex = /,"(\d+,\d+)"$|,""(\d+,\d+)"""?$/;
-                const junkLineRegex = /Pág:|Usuário CLAUDIO|Descricao,,Ncm,No.|LOURENCO E SILVA|CNPJ :/
+                
+                const priceEndRegex = /(?:,|\s)(\d+,\d{2})$/;
+                const oldPriceRegex = /,"(\d+,\d+)"$|,""(\d+,\d+)"""?$/;
+                const junkLineRegex = /Pág:|Usuário CLAUDIO|Descricao,,Ncm,No.|LOURENCO E SILVA|CNPJ :/i;
 
                 const processBlock = (block) => {
                     if (block.length === 0) return;
+
                     const fullText = block.join(' ');
-                    const priceMatch = fullText.match(priceRegex);
-                    if (!priceMatch) return;
-                    const priceStr = priceMatch[1] || priceMatch[2];
-                    const price = parseFloat(priceStr.replace(',', '.'));
-                    const idMatch = block[0].match(/^"?(\d+)/);
-                    if(!idMatch) return;
-                    const id = idMatch[1];
-                    let manufacturer = 'N/A';
-                    const manuParts = fullText.split(/,|\s/);
-                    for(let i = manuParts.length - 1; i >= 0; i--) {
-                        let part = manuParts[i].replace(/"/g, '').trim();
-                        if(part.length > 2 && isNaN(part) && part === part.toUpperCase()) {
-                            manufacturer = part;
-                            break;
+                    
+                    let price = 0;
+                    let priceMatch = fullText.match(priceEndRegex);
+                    
+                    if (priceMatch) {
+                        price = parseFloat(priceMatch[1].replace(',', '.'));
+                    } else {
+                        priceMatch = fullText.match(oldPriceRegex);
+                        if (priceMatch) {
+                            const priceStr = priceMatch[1] || priceMatch[2];
+                            price = parseFloat(priceStr.replace(',', '.'));
+                        } else {
+                            return; 
                         }
                     }
-                    let description = block.map(line => line.replace(priceRegex, '').replace(/"/g, '').replace(/,/g, ' ').replace(/\s\s+/g, ' ').trim()).join(' ').trim();
-                    description = description.replace(/^\d+\s*-\s*/, '');
-                    if (manufacturer !== 'N/A') {
-                       const manuIndex = description.toUpperCase().lastIndexOf(manufacturer);
-                       if (manuIndex > -1) {
-                         description = description.substring(0, manuIndex).trim();
-                       }
+                    
+                    if (isNaN(price) || price <= 0) return;
+
+                    let manufacturer = 'N/A';
+                    const words = fullText.replace(/"/g, '').split(/[\s,]+/);
+                    for (const word of words) {
+                        if (word && word.length > 2 && word === word.toUpperCase() && isNaN(word) && !word.includes('.')) {
+                            manufacturer = word;
+                        }
                     }
+
+                    let id = 'N/A';
+                    const idMatch = fullText.match(/\b(\d{5,})\b/);
+                    if (idMatch) {
+                        id = idMatch[1];
+                    }
+
+                    let description = fullText
+                        .replace(priceEndRegex, '')
+                        .replace(oldPriceRegex, '')
+                        .replace(/,""$/, '')
+                        .replace(/,\s*\d+\s*UN\s*$/i, '')
+                        .replace(/,/g, ' ')
+                        .replace(/"/g, '')
+                        .replace(/\s\s+/g, ' ')
+                        .trim();
+
+                    if (manufacturer !== 'N/A') {
+                        const manuIndex = description.lastIndexOf(manufacturer);
+                        if (manuIndex > -1) {
+                            description = description.substring(0, manuIndex).trim();
+                        }
+                    }
+                    description = description.replace(/^\d+\s*-\s*/, '').replace(/[,-]\s*$/, '').trim();
+
                     const uuid = 'prod-' + (products.length + 1);
-                    if (id && description && !isNaN(price) && description.length > 0) {
+                    if (description) {
                         products.push({ id, uuid, description, manufacturer, price, originalPrice: price });
                     }
                 };
@@ -227,16 +256,18 @@
                 for (const line of lines) {
                     const trimmed = line.trim();
                     if (!trimmed || junkLineRegex.test(trimmed) || trimmed.split(',').every(c => c === '""' || c === '')) continue;
-                    if (startRegex.test(trimmed)) {
+
+                    currentBlock.push(trimmed);
+
+                    if (priceEndRegex.test(trimmed) || oldPriceRegex.test(trimmed)) {
                         processBlock(currentBlock);
-                        currentBlock = [trimmed];
-                    } else if (currentBlock.length > 0) {
-                        currentBlock.push(trimmed);
+                        currentBlock = [];
                     }
                 }
-                processBlock(currentBlock);
+
                 return products;
             };
+
 
             const loadProducts = async () => {
                 showMessage("Carregando produtos...");
@@ -246,7 +277,11 @@
                     const csvText = await response.text();
                     if (!csvText) throw new Error("O arquivo 'produtos.csv' está vazio.");
                     allProducts = parseCSV(csvText);
-                    showMessage(`${allProducts.length} produtos carregados!`);
+                    if (allProducts.length === 0) {
+                         showMessage("Nenhum produto com preço foi encontrado. Verifique o arquivo CSV.");
+                    } else {
+                         showMessage(`${allProducts.length} produtos carregados!`);
+                    }
                 } catch (err) {
                     showMessage(err.message);
                 }
