@@ -183,29 +183,30 @@
                 return text.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
             };
             
-            // **CORRIGIDO**: Lógica de análise de CSV simplificada, baseada na sua ideia.
+            // **VERSÃO FINAL**: Lógica de análise de CSV usando apenas aspas como delimitador de início.
             const parseCSV = (csvText) => {
                 const lines = csvText.trim().replace(/\r/g, '').split('\n');
                 const products = [];
-                
-                const priceRegex = /(\d+[,.]\d{2})\s*"?$|(\d+)\s+(\d{1,2})\s*"?$/;
-                const junkLineRegex = /Pág:|Usuário CLAUDIO|Descricao,,Ncm,No.|LOURENCO E SILVA|CNPJ :/i;
+
+                const priceRegex = /(\d{1,3}(?:\.\d{3})*,\d{2})\s*"?$|(\d+[,.]\d{2})\s*"?$|(\d+)\s+(\d{1,2})\s*"?$/;
 
                 for (const line of lines) {
                     let trimmedLine = line.trim();
 
-                    // Regras: Começa com ", tem menos de 110 caracteres e não é uma linha inútil.
-                    if (trimmedLine.startsWith('"') && trimmedLine.length < 110 && !junkLineRegex.test(trimmedLine)) {
-                        
+                    // A única regra: a linha DEVE começar com aspas.
+                    if (trimmedLine.startsWith('"')) {
+
                         const priceMatch = trimmedLine.match(priceRegex);
-                        if (!priceMatch) continue;
+                        if (!priceMatch) continue; // Se não tem um padrão de preço reconhecível, ignora.
 
                         let price = 0;
-                        if (priceMatch[1]) {
-                            price = parseFloat(priceMatch[1].replace(',', '.'));
-                        } else if (priceMatch[2] && priceMatch[3]) {
-                            let cents = priceMatch[3].length === 1 ? `0${priceMatch[3]}` : priceMatch[3];
-                            price = parseFloat(`${priceMatch[2]}.${cents}`);
+                        if (priceMatch[1]) { // Formato 1.234,56
+                            price = parseFloat(priceMatch[1].replace(/\./g, '').replace(',', '.'));
+                        } else if (priceMatch[2]) { // Formato 1234,56 ou 1234.56
+                            price = parseFloat(priceMatch[2].replace(',', '.'));
+                        } else if (priceMatch[3] && priceMatch[4]) { // Formato 1234 56
+                            let cents = priceMatch[4].length === 1 ? `0${priceMatch[4]}` : priceMatch[4];
+                            price = parseFloat(`${priceMatch[3]}.${cents}`);
                         }
 
                         if (isNaN(price)) continue;
@@ -245,7 +246,7 @@
                     if (!csvText) throw new Error("O arquivo 'produtos.csv' está vazio.");
                     allProducts = parseCSV(csvText);
                     if (allProducts.length === 0) {
-                         showMessage("Nenhum produto foi carregado. Verifique o formato do arquivo.");
+                         showMessage("Nenhum produto foi carregado. Verifique o arquivo.");
                     } else {
                          showMessage(`${allProducts.length} produtos carregados!`);
                     }
