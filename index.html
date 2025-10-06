@@ -183,91 +183,69 @@
                 return text.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
             };
             
-            // **CORRIGIDO**: Nova função de análise de CSV, mais flexível.
+            // **CORRIGIDO**: Nova função de análise de CSV, mais flexível e robusta.
             const parseCSV = (csvText) => {
                 const lines = csvText.trim().replace(/\r/g, '').split('\n');
                 const products = [];
                 let currentBlock = [];
                 
-                const priceEndRegex = /(?:,|\s)(\d+,\d{2})$/;
-                const oldPriceRegex = /,"(\d+,\d+)"$|,""(\d+,\d+)"""?$/;
+                const priceRegex = /(\d+[,.]\d{2})\s*"?$|(\d+)\s+(\d{1,2})\s*"?$/;
                 const junkLineRegex = /Pág:|Usuário CLAUDIO|Descricao,,Ncm,No.|LOURENCO E SILVA|CNPJ :/i;
 
                 const processBlock = (block) => {
                     if (block.length === 0) return;
 
-                    const fullText = block.join(' ');
-                    
+                    let fullText = block.join(' ');
+                    const priceMatch = fullText.match(priceRegex);
+                    if (!priceMatch) return;
+
                     let price = 0;
-                    let priceMatch = fullText.match(priceEndRegex);
-                    
-                    if (priceMatch) {
+                    if (priceMatch[1]) {
                         price = parseFloat(priceMatch[1].replace(',', '.'));
-                    } else {
-                        priceMatch = fullText.match(oldPriceRegex);
-                        if (priceMatch) {
-                            const priceStr = priceMatch[1] || priceMatch[2];
-                            price = parseFloat(priceStr.replace(',', '.'));
-                        } else {
-                            return; 
-                        }
+                    } else if (priceMatch[2] && priceMatch[3]) {
+                        let cents = priceMatch[3].length === 1 ? `0${priceMatch[3]}` : priceMatch[3];
+                        price = parseFloat(`${priceMatch[2]}.${cents}`);
+                    }
+
+                    if (isNaN(price)) return;
+
+                    let textToParse = fullText.replace(priceRegex, '').trim();
+                    textToParse = textToParse.replace(/,""$/, '').replace(/,\s*\d+\s*UN\s*$/i, '').replace(/"/g, '').replace(/\s\s+/g, ' ').trim();
+
+                    const words = textToParse.split(/\s+/);
+                    let manufacturer = 'N/A';
+                    const lastWord = words[words.length - 1];
+                    if (lastWord && lastWord.length > 2 && lastWord.toUpperCase() === lastWord && isNaN(lastWord)) {
+                        manufacturer = lastWord;
+                        words.pop(); 
                     }
                     
-                    if (isNaN(price) || price <= 0) return;
-
-                    let manufacturer = 'N/A';
-                    const words = fullText.replace(/"/g, '').split(/[\s,]+/);
-                    for (const word of words) {
-                        if (word && word.length > 2 && word === word.toUpperCase() && isNaN(word) && !word.includes('.')) {
-                            manufacturer = word;
-                        }
-                    }
-
-                    let id = 'N/A';
-                    const idMatch = fullText.match(/\b(\d{5,})\b/);
-                    if (idMatch) {
-                        id = idMatch[1];
-                    }
-
-                    let description = fullText
-                        .replace(priceEndRegex, '')
-                        .replace(oldPriceRegex, '')
-                        .replace(/,""$/, '')
-                        .replace(/,\s*\d+\s*UN\s*$/i, '')
-                        .replace(/,/g, ' ')
-                        .replace(/"/g, '')
-                        .replace(/\s\s+/g, ' ')
-                        .trim();
-
-                    if (manufacturer !== 'N/A') {
-                        const manuIndex = description.lastIndexOf(manufacturer);
-                        if (manuIndex > -1) {
-                            description = description.substring(0, manuIndex).trim();
-                        }
-                    }
-                    description = description.replace(/^\d+\s*-\s*/, '').replace(/[,-]\s*$/, '').trim();
+                    let description = words.join(' ').replace(/,/g, ' ').trim();
+                    const idMatch = description.match(/^\d[\d\s-]*\d/);
+                    let id = idMatch ? idMatch[0].replace(/\s*-/, '').trim() : 'N/A';
+                    description = description.replace(/^\d+\s*-\s*/, '').trim();
 
                     const uuid = 'prod-' + (products.length + 1);
                     if (description) {
                         products.push({ id, uuid, description, manufacturer, price, originalPrice: price });
                     }
                 };
-
+                
                 for (const line of lines) {
                     const trimmed = line.trim();
-                    if (!trimmed || junkLineRegex.test(trimmed) || trimmed.split(',').every(c => c === '""' || c === '')) continue;
+                    if (!trimmed || junkLineRegex.test(trimmed)) continue;
 
                     currentBlock.push(trimmed);
 
-                    if (priceEndRegex.test(trimmed) || oldPriceRegex.test(trimmed)) {
+                    if (priceRegex.test(trimmed)) {
                         processBlock(currentBlock);
                         currentBlock = [];
                     }
                 }
+                processBlock(currentBlock);
 
                 return products;
             };
-
 
             const loadProducts = async () => {
                 showMessage("Carregando produtos...");
@@ -276,9 +254,11 @@
                     if (!response.ok) throw new Error(`Arquivo 'produtos.csv' não encontrado.`);
                     const csvText = await response.text();
                     if (!csvText) throw new Error("O arquivo 'produtos.csv' está vazio.");
+                    
                     allProducts = parseCSV(csvText);
+                    
                     if (allProducts.length === 0) {
-                         showMessage("Nenhum produto com preço foi encontrado. Verifique o arquivo CSV.");
+                         showMessage("Nenhum produto foi carregado. Verifique o formato do arquivo.");
                     } else {
                          showMessage(`${allProducts.length} produtos carregados!`);
                     }
