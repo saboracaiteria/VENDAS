@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Busca de Itens</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Adicionada a biblioteca jsPDF para gerar PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         body {
@@ -71,7 +70,6 @@
                 </div>
 
                 <div class="whatsapp-section mt-4">
-                    <!-- Novo campo para nome do cliente -->
                     <input type="text" id="client-name" placeholder="Nome do cliente" class="w-full p-2 border rounded-md mb-2">
                     <input type="tel" id="whatsapp-number" placeholder="DDD + Número do cliente" class="w-full p-2 border rounded-md mb-2">
                     <button id="whatsapp-btn" class="w-full bg-green-500 text-white font-bold py-2 px-4 rounded-md hover:bg-green-600">Enviar Orçamento</button>
@@ -89,13 +87,18 @@
         </div>
     </div>
 
+    <!-- Botão Flutuante de Busca por Voz -->
+    <button id="floating-voice-btn" class="fixed bottom-5 right-5 w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center shadow-lg z-20 hover:bg-green-600 transition-transform transform hover:scale-110 hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24"><path fill="currentColor" d="M12 14a2 2 0 0 0 2-2V6a2 2 0 0 0-4 0v6a2 2 0 0 0 2 2zm-2-8a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2V6zm10 4a1 1 0 0 0-1 1a7 7 0 0 1-14 0a1 1 0 0 0-2 0a9 9 0 0 0 8 8.94V22a1 1 0 0 0 2 0v-2.06A9 9 0 0 0 20 11a1 1 0 0 0-1-1z"/></svg>
+    </button>
+
     <div id="add-item-modal" class="fixed inset-0 z-50 items-center justify-center flex hidden bg-black bg-opacity-50">
         <div class="bg-white rounded-lg shadow-xl w-11/12 max-w-sm">
             <div class="bg-gray-200 p-3 rounded-t-lg">
                 <h3 id="modal-item-name" class="font-bold text-center text-gray-700"></h3>
             </div>
             <div class="p-4 space-y-3 text-sm">
-                <div class="flex justify-between items-center">
+                 <div class="flex justify-between items-center">
                     <span class="font-semibold text-gray-500">FABRICANTE:</span>
                     <span id="modal-item-manufacturer" class="text-right font-semibold text-gray-800"></span>
                 </div>
@@ -138,12 +141,13 @@
             const passwordError = document.getElementById('password-error');
             const appContainer = document.getElementById('app-container');
             const searchInput = document.getElementById('search-input');
-            const voiceSearchBtn = document.getElementById('voice-search-btn'); // Botão de busca por voz
+            const voiceSearchBtn = document.getElementById('voice-search-btn');
+            const floatingVoiceBtn = document.getElementById('floating-voice-btn'); // Botão flutuante
             const productListElement = document.getElementById('product-list');
             const cartItemsElement = document.getElementById('cart-items');
             const totalValueElement = document.getElementById('total-value');
             const discountInput = document.getElementById('discount-input');
-            const clientNameInput = document.getElementById('client-name'); // Referência para o novo campo
+            const clientNameInput = document.getElementById('client-name');
             const whatsappNumberInput = document.getElementById('whatsapp-number');
             const whatsappBtn = document.getElementById('whatsapp-btn');
             const copyBtn = document.getElementById('copy-btn');
@@ -172,6 +176,12 @@
                 messageBox.textContent = text;
                 messageBox.classList.remove('opacity-0');
                 setTimeout(() => { messageBox.classList.add('opacity-0'); }, 3000);
+            };
+
+            // **CORREÇÃO**: Função para normalizar texto (remover acentos e converter para minúsculas)
+            const normalizeText = (text) => {
+                if (!text) return '';
+                return text.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
             };
             
             const parseCSV = (csvText) => {
@@ -344,7 +354,8 @@
             };
 
             searchInput.addEventListener('input', () => {
-                const searchTerm = searchInput.value.toLowerCase().trim();
+                // **CORREÇÃO**: Usa a função de normalização na busca
+                const searchTerm = normalizeText(searchInput.value.trim());
                 if (searchTerm.length < 3) {
                     renderProducts([]);
                     return;
@@ -355,14 +366,15 @@
                     return;
                 }
                 const filteredProducts = allProducts.filter(product => {
-                    const productDesc = product.description.toLowerCase();
+                    // **CORREÇÃO**: Normaliza também a descrição do produto para comparação
+                    const productDesc = normalizeText(product.description);
                     return searchWords.every(word => productDesc.includes(word));
                 });
                 renderProducts(filteredProducts);
             });
 
-            // --- Lógica da Busca por Voz ---
-            voiceSearchBtn.addEventListener('click', () => {
+            // --- Lógica da Busca por Voz (Refatorada) ---
+            const startVoiceRecognition = (buttonElement) => {
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
                 if (!SpeechRecognition) {
                     showMessage("Seu navegador não suporta a busca por voz.");
@@ -376,38 +388,45 @@
 
                 recognition.start();
 
-                voiceSearchBtn.classList.add('animate-pulse', 'bg-red-500');
-                voiceSearchBtn.classList.remove('bg-green-500');
+                buttonElement.classList.add('animate-pulse', 'bg-red-500');
+                buttonElement.classList.remove('bg-green-500');
                 showMessage("Ouvindo...");
 
                 recognition.onresult = (event) => {
                     const speechResult = event.results[0][0].transcript;
                     searchInput.value = speechResult;
-                    // Dispara o evento de input para que a busca seja executada
                     searchInput.dispatchEvent(new Event('input', { bubbles: true }));
                 };
 
                 recognition.onspeechend = () => {
                     recognition.stop();
-                    voiceSearchBtn.classList.remove('animate-pulse', 'bg-red-500');
-                    voiceSearchBtn.classList.add('bg-green-500');
+                    buttonElement.classList.remove('animate-pulse', 'bg-red-500');
+                    buttonElement.classList.add('bg-green-500');
                 };
 
                 recognition.onerror = (event) => {
-                    voiceSearchBtn.classList.remove('animate-pulse', 'bg-red-500');
-                    voiceSearchBtn.classList.add('bg-green-500');
-                    if (event.error == 'no-speech') {
-                        showMessage("Nenhuma fala detectada. Tente novamente.");
-                    } else if (event.error == 'audio-capture') {
-                        showMessage("Problema na captura de áudio.");
-                    } else if (event.error == 'not-allowed') {
-                        showMessage("Permissão para usar o microfone negada.");
-                    } else {
-                        showMessage("Erro no reconhecimento de voz: " + event.error);
-                    }
+                    buttonElement.classList.remove('animate-pulse', 'bg-red-500');
+                    buttonElement.classList.add('bg-green-500');
+                    const errorMessages = {
+                        'no-speech': "Nenhuma fala detectada. Tente novamente.",
+                        'audio-capture': "Problema na captura de áudio.",
+                        'not-allowed': "Permissão para usar o microfone negada."
+                    };
+                    showMessage(errorMessages[event.error] || "Erro no reconhecimento de voz: " + event.error);
                 };
-            });
-            // --- Fim da Lógica da Busca por Voz ---
+            };
+            
+            voiceSearchBtn.addEventListener('click', () => startVoiceRecognition(voiceSearchBtn));
+            floatingVoiceBtn.addEventListener('click', () => startVoiceRecognition(floatingVoiceBtn));
+
+            // Mostra/Esconde o botão flutuante ao rolar a página
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 150) {
+                    floatingVoiceBtn.classList.remove('hidden');
+                } else {
+                    floatingVoiceBtn.classList.add('hidden');
+                }
+            }, { passive: true });
 
             productListElement.addEventListener('click', (e) => {
                 const btn = e.target.closest('.add-btn');
@@ -448,9 +467,7 @@
                 const clientName = clientNameInput.value.trim();
                 let subtotal = 0;
                 let text = `*Orçamento*\n`;
-                if(clientName) {
-                    text += `*Cliente:* ${clientName}\n`;
-                }
+                if(clientName) text += `*Cliente:* ${clientName}\n`;
                 text += `\n`;
 
                 cart.forEach(item => {
@@ -594,4 +611,5 @@
     </script>
 </body>
 </html>
+
 
