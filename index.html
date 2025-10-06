@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Busca de Itens</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Adicionada a biblioteca jsPDF para gerar PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         body {
@@ -70,6 +71,7 @@
                 </div>
 
                 <div class="whatsapp-section mt-4">
+                    <!-- Novo campo para nome do cliente -->
                     <input type="text" id="client-name" placeholder="Nome do cliente" class="w-full p-2 border rounded-md mb-2">
                     <input type="tel" id="whatsapp-number" placeholder="DDD + Número do cliente" class="w-full p-2 border rounded-md mb-2">
                     <button id="whatsapp-btn" class="w-full bg-green-500 text-white font-bold py-2 px-4 rounded-md hover:bg-green-600">Enviar Orçamento</button>
@@ -87,18 +89,13 @@
         </div>
     </div>
 
-    <!-- Botão Flutuante de Busca por Voz -->
-    <button id="floating-voice-btn" class="fixed bottom-5 right-5 w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center shadow-lg z-20 hover:bg-green-600 transition-transform transform hover:scale-110 hidden">
-        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24"><path fill="currentColor" d="M12 14a2 2 0 0 0 2-2V6a2 2 0 0 0-4 0v6a2 2 0 0 0 2 2zm-2-8a2 2 0 0 1 2-2h0a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h0a2 2 0 0 1-2-2V6zm10 4a1 1 0 0 0-1 1a7 7 0 0 1-14 0a1 1 0 0 0-2 0a9 9 0 0 0 8 8.94V22a1 1 0 0 0 2 0v-2.06A9 9 0 0 0 20 11a1 1 0 0 0-1-1z"/></svg>
-    </button>
-
     <div id="add-item-modal" class="fixed inset-0 z-50 items-center justify-center flex hidden bg-black bg-opacity-50">
         <div class="bg-white rounded-lg shadow-xl w-11/12 max-w-sm">
             <div class="bg-gray-200 p-3 rounded-t-lg">
                 <h3 id="modal-item-name" class="font-bold text-center text-gray-700"></h3>
             </div>
             <div class="p-4 space-y-3 text-sm">
-                 <div class="flex justify-between items-center">
+                <div class="flex justify-between items-center">
                     <span class="font-semibold text-gray-500">FABRICANTE:</span>
                     <span id="modal-item-manufacturer" class="text-right font-semibold text-gray-800"></span>
                 </div>
@@ -141,13 +138,12 @@
             const passwordError = document.getElementById('password-error');
             const appContainer = document.getElementById('app-container');
             const searchInput = document.getElementById('search-input');
-            const voiceSearchBtn = document.getElementById('voice-search-btn');
-            const floatingVoiceBtn = document.getElementById('floating-voice-btn');
+            const voiceSearchBtn = document.getElementById('voice-search-btn'); // Botão de busca por voz
             const productListElement = document.getElementById('product-list');
             const cartItemsElement = document.getElementById('cart-items');
             const totalValueElement = document.getElementById('total-value');
             const discountInput = document.getElementById('discount-input');
-            const clientNameInput = document.getElementById('client-name');
+            const clientNameInput = document.getElementById('client-name'); // Referência para o novo campo
             const whatsappNumberInput = document.getElementById('whatsapp-number');
             const whatsappBtn = document.getElementById('whatsapp-btn');
             const copyBtn = document.getElementById('copy-btn');
@@ -177,63 +173,59 @@
                 messageBox.classList.remove('opacity-0');
                 setTimeout(() => { messageBox.classList.add('opacity-0'); }, 3000);
             };
-
-            const normalizeText = (text) => {
-                if (!text) return '';
-                return text.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-            };
             
-            // **VERSÃO FINAL**: Lógica de análise de CSV usando apenas aspas como delimitador de início.
             const parseCSV = (csvText) => {
                 const lines = csvText.trim().replace(/\r/g, '').split('\n');
                 const products = [];
+                let currentBlock = [];
+                const startRegex = /^"?\d+\s*-\s*/;
+                const priceRegex = /,"(\d+,\d+)"$|,""(\d+,\d+)"""?$/;
+                const junkLineRegex = /Pág:|Usuário CLAUDIO|Descricao,,Ncm,No.|LOURENCO E SILVA|CNPJ :/
 
-                const priceRegex = /(\d{1,3}(?:\.\d{3})*,\d{2})\s*"?$|(\d+[,.]\d{2})\s*"?$|(\d+)\s+(\d{1,2})\s*"?$/;
-
-                for (const line of lines) {
-                    let trimmedLine = line.trim();
-
-                    // A única regra: a linha DEVE começar com aspas.
-                    if (trimmedLine.startsWith('"')) {
-
-                        const priceMatch = trimmedLine.match(priceRegex);
-                        if (!priceMatch) continue; // Se não tem um padrão de preço reconhecível, ignora.
-
-                        let price = 0;
-                        if (priceMatch[1]) { // Formato 1.234,56
-                            price = parseFloat(priceMatch[1].replace(/\./g, '').replace(',', '.'));
-                        } else if (priceMatch[2]) { // Formato 1234,56 ou 1234.56
-                            price = parseFloat(priceMatch[2].replace(',', '.'));
-                        } else if (priceMatch[3] && priceMatch[4]) { // Formato 1234 56
-                            let cents = priceMatch[4].length === 1 ? `0${priceMatch[4]}` : priceMatch[4];
-                            price = parseFloat(`${priceMatch[3]}.${cents}`);
-                        }
-
-                        if (isNaN(price)) continue;
-
-                        let textToParse = trimmedLine.replace(priceRegex, '').trim();
-                        textToParse = textToParse.replace(/"/g, '').replace(/,/g, ' ').replace(/\s\s+/g, ' ').trim();
-                        
-                        const words = textToParse.split(/\s+/);
-                        let manufacturer = 'N/A';
-                        const lastWord = words[words.length - 1];
-                        
-                        if (lastWord && lastWord.length > 2 && lastWord.toUpperCase() === lastWord && isNaN(lastWord)) {
-                            manufacturer = lastWord;
-                            words.pop();
-                        }
-
-                        let description = words.join(' ').trim();
-                        const idMatch = description.match(/^\d[\d\s-]*/);
-                        let id = idMatch ? idMatch[0].trim().replace(/\s*-$/, '').trim() : 'N/A';
-                        description = description.replace(/^\d+\s*-\s*/, '').trim();
-
-                        const uuid = 'prod-' + (products.length + 1);
-                        if (description) {
-                            products.push({ id, uuid, description, manufacturer, price, originalPrice: price });
+                const processBlock = (block) => {
+                    if (block.length === 0) return;
+                    const fullText = block.join(' ');
+                    const priceMatch = fullText.match(priceRegex);
+                    if (!priceMatch) return;
+                    const priceStr = priceMatch[1] || priceMatch[2];
+                    const price = parseFloat(priceStr.replace(',', '.'));
+                    const idMatch = block[0].match(/^"?(\d+)/);
+                    if(!idMatch) return;
+                    const id = idMatch[1];
+                    let manufacturer = 'N/A';
+                    const manuParts = fullText.split(/,|\s/);
+                    for(let i = manuParts.length - 1; i >= 0; i--) {
+                        let part = manuParts[i].replace(/"/g, '').trim();
+                        if(part.length > 2 && isNaN(part) && part === part.toUpperCase()) {
+                            manufacturer = part;
+                            break;
                         }
                     }
+                    let description = block.map(line => line.replace(priceRegex, '').replace(/"/g, '').replace(/,/g, ' ').replace(/\s\s+/g, ' ').trim()).join(' ').trim();
+                    description = description.replace(/^\d+\s*-\s*/, '');
+                    if (manufacturer !== 'N/A') {
+                       const manuIndex = description.toUpperCase().lastIndexOf(manufacturer);
+                       if (manuIndex > -1) {
+                         description = description.substring(0, manuIndex).trim();
+                       }
+                    }
+                    const uuid = 'prod-' + (products.length + 1);
+                    if (id && description && !isNaN(price) && description.length > 0) {
+                        products.push({ id, uuid, description, manufacturer, price, originalPrice: price });
+                    }
+                };
+
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (!trimmed || junkLineRegex.test(trimmed) || trimmed.split(',').every(c => c === '""' || c === '')) continue;
+                    if (startRegex.test(trimmed)) {
+                        processBlock(currentBlock);
+                        currentBlock = [trimmed];
+                    } else if (currentBlock.length > 0) {
+                        currentBlock.push(trimmed);
+                    }
                 }
+                processBlock(currentBlock);
                 return products;
             };
 
@@ -245,11 +237,7 @@
                     const csvText = await response.text();
                     if (!csvText) throw new Error("O arquivo 'produtos.csv' está vazio.");
                     allProducts = parseCSV(csvText);
-                    if (allProducts.length === 0) {
-                         showMessage("Nenhum produto foi carregado. Verifique o arquivo.");
-                    } else {
-                         showMessage(`${allProducts.length} produtos carregados!`);
-                    }
+                    showMessage(`${allProducts.length} produtos carregados!`);
                 } catch (err) {
                     showMessage(err.message);
                 }
@@ -356,7 +344,7 @@
             };
 
             searchInput.addEventListener('input', () => {
-                const searchTerm = normalizeText(searchInput.value.trim());
+                const searchTerm = searchInput.value.toLowerCase().trim();
                 if (searchTerm.length < 3) {
                     renderProducts([]);
                     return;
@@ -367,13 +355,14 @@
                     return;
                 }
                 const filteredProducts = allProducts.filter(product => {
-                    const productDesc = normalizeText(product.description);
+                    const productDesc = product.description.toLowerCase();
                     return searchWords.every(word => productDesc.includes(word));
                 });
                 renderProducts(filteredProducts);
             });
 
-            const startVoiceRecognition = (buttonElement) => {
+            // --- Lógica da Busca por Voz ---
+            voiceSearchBtn.addEventListener('click', () => {
                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
                 if (!SpeechRecognition) {
                     showMessage("Seu navegador não suporta a busca por voz.");
@@ -387,44 +376,38 @@
 
                 recognition.start();
 
-                buttonElement.classList.add('animate-pulse', 'bg-red-500');
-                buttonElement.classList.remove('bg-green-500');
+                voiceSearchBtn.classList.add('animate-pulse', 'bg-red-500');
+                voiceSearchBtn.classList.remove('bg-green-500');
                 showMessage("Ouvindo...");
 
                 recognition.onresult = (event) => {
                     const speechResult = event.results[0][0].transcript;
                     searchInput.value = speechResult;
+                    // Dispara o evento de input para que a busca seja executada
                     searchInput.dispatchEvent(new Event('input', { bubbles: true }));
                 };
 
                 recognition.onspeechend = () => {
                     recognition.stop();
-                    buttonElement.classList.remove('animate-pulse', 'bg-red-500');
-                    buttonElement.classList.add('bg-green-500');
+                    voiceSearchBtn.classList.remove('animate-pulse', 'bg-red-500');
+                    voiceSearchBtn.classList.add('bg-green-500');
                 };
 
                 recognition.onerror = (event) => {
-                    buttonElement.classList.remove('animate-pulse', 'bg-red-500');
-                    buttonElement.classList.add('bg-green-500');
-                    const errorMessages = {
-                        'no-speech': "Nenhuma fala detectada. Tente novamente.",
-                        'audio-capture': "Problema na captura de áudio.",
-                        'not-allowed': "Permissão para usar o microfone negada."
-                    };
-                    showMessage(errorMessages[event.error] || "Erro no reconhecimento de voz: " + event.error);
+                    voiceSearchBtn.classList.remove('animate-pulse', 'bg-red-500');
+                    voiceSearchBtn.classList.add('bg-green-500');
+                    if (event.error == 'no-speech') {
+                        showMessage("Nenhuma fala detectada. Tente novamente.");
+                    } else if (event.error == 'audio-capture') {
+                        showMessage("Problema na captura de áudio.");
+                    } else if (event.error == 'not-allowed') {
+                        showMessage("Permissão para usar o microfone negada.");
+                    } else {
+                        showMessage("Erro no reconhecimento de voz: " + event.error);
+                    }
                 };
-            };
-            
-            voiceSearchBtn.addEventListener('click', () => startVoiceRecognition(voiceSearchBtn));
-            floatingVoiceBtn.addEventListener('click', () => startVoiceRecognition(floatingVoiceBtn));
-
-            window.addEventListener('scroll', () => {
-                if (window.scrollY > 150) {
-                    floatingVoiceBtn.classList.remove('hidden');
-                } else {
-                    floatingVoiceBtn.classList.add('hidden');
-                }
-            }, { passive: true });
+            });
+            // --- Fim da Lógica da Busca por Voz ---
 
             productListElement.addEventListener('click', (e) => {
                 const btn = e.target.closest('.add-btn');
@@ -465,7 +448,9 @@
                 const clientName = clientNameInput.value.trim();
                 let subtotal = 0;
                 let text = `*Orçamento*\n`;
-                if(clientName) text += `*Cliente:* ${clientName}\n`;
+                if(clientName) {
+                    text += `*Cliente:* ${clientName}\n`;
+                }
                 text += `\n`;
 
                 cart.forEach(item => {
@@ -609,5 +594,4 @@
     </script>
 </body>
 </html>
-
 
