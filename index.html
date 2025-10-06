@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Busca de Itens</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Adicionada a biblioteca jsPDF para gerar PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -69,6 +71,8 @@
                     <input type="tel" id="whatsapp-number" placeholder="DDD + Número do cliente" class="w-full p-2 border rounded-md mb-2">
                     <button id="whatsapp-btn" class="w-full bg-green-500 text-white font-bold py-2 px-4 rounded-md hover:bg-green-600">Enviar Orçamento</button>
                     <button id="copy-btn" class="w-full bg-gray-500 text-white font-bold py-2 px-4 rounded-md mt-2 hover:bg-gray-600">Copiar Orçamento</button>
+                    <!-- Novo botão para gerar PDF -->
+                    <button id="pdf-btn" class="w-full bg-red-500 text-white font-bold py-2 px-4 rounded-md mt-2 hover:bg-red-600">Gerar PDF do Orçamento</button>
                 </div>
             </div>
             
@@ -137,6 +141,7 @@
             const whatsappNumberInput = document.getElementById('whatsapp-number');
             const whatsappBtn = document.getElementById('whatsapp-btn');
             const copyBtn = document.getElementById('copy-btn');
+            const pdfBtn = document.getElementById('pdf-btn'); // Referência para o novo botão
             const messageBox = document.getElementById('message-box');
             const modal = document.getElementById('add-item-modal');
             const modalItemName = document.getElementById('modal-item-name');
@@ -412,6 +417,85 @@
                 return text;
             };
 
+            // --- NOVA FUNÇÃO PARA GERAR PDF ---
+            const generatePDF = () => {
+                if (cart.length === 0) {
+                    showMessage("O pedido está vazio.");
+                    return;
+                }
+
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                let y = 15; // Posição Y inicial
+                const lineHeight = 7;
+                const margin = 10;
+                const pageWidth = doc.internal.pageSize.getWidth();
+
+                // Cabeçalho
+                doc.setFontSize(20);
+                doc.setFont("helvetica", "bold");
+                doc.text("Orçamento", pageWidth / 2, y, { align: 'center' });
+                y += lineHeight * 2;
+
+                // Itens do carrinho
+                let subtotal = 0;
+                cart.forEach(item => {
+                    const itemTotal = item.quantity * item.price;
+                    subtotal += itemTotal;
+
+                    // Quebra de linha manual para descrição longa
+                    const splitDescription = doc.splitTextToSize(item.description, pageWidth - margin * 2);
+                    
+                    doc.setFontSize(12);
+                    doc.setFont("helvetica", "bold");
+                    doc.text(splitDescription, margin, y);
+                    y += (splitDescription.length * (lineHeight-2)); // Ajusta o Y baseado no número de linhas
+
+                    doc.setFontSize(10);
+                    doc.setFont("helvetica", "normal");
+                    doc.text(`Fabricante: ${item.manufacturer}`, margin, y);
+                    y += lineHeight;
+                    doc.text(`Qtd: ${item.quantity} x ${formatCurrency(item.price)} = ${formatCurrency(itemTotal)}`, margin, y);
+                    y += lineHeight * 1.5; // Espaço extra entre os itens
+
+                    // Adiciona nova página se o conteúdo estiver saindo
+                    if (y > 280) {
+                        doc.addPage();
+                        y = 15;
+                    }
+                });
+
+                // Seção de Totais
+                y += lineHeight;
+                doc.line(margin, y, pageWidth - margin, y); // Linha separadora
+                y += lineHeight;
+
+                const total = subtotal - globalDiscount;
+
+                doc.setFontSize(12);
+                doc.setFont("helvetica", "bold");
+                doc.text(`Subtotal:`, margin, y);
+                doc.text(`${formatCurrency(subtotal)}`, pageWidth - margin, y, { align: 'right' });
+                y += lineHeight;
+
+                if (globalDiscount > 0) {
+                    doc.setFont("helvetica", "normal");
+                    doc.text(`Desconto:`, margin, y);
+                    doc.text(`-${formatCurrency(globalDiscount)}`, pageWidth - margin, y, { align: 'right' });
+                    y += lineHeight;
+                }
+                
+                doc.setFontSize(14);
+                doc.setFont("helvetica", "bold");
+                doc.line(margin, y - (lineHeight/2), pageWidth - margin, y - (lineHeight/2));
+                doc.text(`Total:`, margin, y);
+                doc.text(`${formatCurrency(total > 0 ? total : 0)}`, pageWidth - margin, y, { align: 'right' });
+
+                doc.save('orcamento.pdf');
+                showMessage("PDF gerado com sucesso!");
+            };
+
             whatsappBtn.addEventListener('click', () => {
                 const text = generateQuoteText();
                 if (!text) return;
@@ -427,9 +511,16 @@
                 const quoteTextArea = document.getElementById('quote-text');
                 quoteTextArea.value = text;
                 quoteTextArea.select();
-                document.execCommand('copy');
-                showMessage("Orçamento copiado!");
+                try {
+                   document.execCommand('copy');
+                   showMessage("Orçamento copiado!");
+                } catch (err) {
+                   showMessage("Erro ao copiar.");
+                }
             });
+            
+            // Adiciona o evento de clique para o botão de PDF
+            pdfBtn.addEventListener('click', generatePDF);
 
             // --- LÓGICA DA SENHA ---
             const checkPassword = () => {
