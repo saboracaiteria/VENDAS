@@ -68,10 +68,11 @@
                 </div>
 
                 <div class="whatsapp-section mt-4">
+                    <!-- Novo campo para nome do cliente -->
+                    <input type="text" id="client-name" placeholder="Nome do cliente" class="w-full p-2 border rounded-md mb-2">
                     <input type="tel" id="whatsapp-number" placeholder="DDD + Número do cliente" class="w-full p-2 border rounded-md mb-2">
                     <button id="whatsapp-btn" class="w-full bg-green-500 text-white font-bold py-2 px-4 rounded-md hover:bg-green-600">Enviar Orçamento</button>
                     <button id="copy-btn" class="w-full bg-gray-500 text-white font-bold py-2 px-4 rounded-md mt-2 hover:bg-gray-600">Copiar Orçamento</button>
-                    <!-- Novo botão para gerar PDF -->
                     <button id="pdf-btn" class="w-full bg-red-500 text-white font-bold py-2 px-4 rounded-md mt-2 hover:bg-red-600">Gerar PDF do Orçamento</button>
                 </div>
             </div>
@@ -138,10 +139,11 @@
             const cartItemsElement = document.getElementById('cart-items');
             const totalValueElement = document.getElementById('total-value');
             const discountInput = document.getElementById('discount-input');
+            const clientNameInput = document.getElementById('client-name'); // Referência para o novo campo
             const whatsappNumberInput = document.getElementById('whatsapp-number');
             const whatsappBtn = document.getElementById('whatsapp-btn');
             const copyBtn = document.getElementById('copy-btn');
-            const pdfBtn = document.getElementById('pdf-btn'); // Referência para o novo botão
+            const pdfBtn = document.getElementById('pdf-btn'); 
             const messageBox = document.getElementById('message-box');
             const modal = document.getElementById('add-item-modal');
             const modalItemName = document.getElementById('modal-item-name');
@@ -337,32 +339,21 @@
                 closeModal();
             };
 
-            // --- LÓGICA DE BUSCA MELHORADA ---
             searchInput.addEventListener('input', () => {
                 const searchTerm = searchInput.value.toLowerCase().trim();
-
-                // Só busca se tiver pelo menos 3 caracteres
                 if (searchTerm.length < 3) {
                     renderProducts([]);
                     return;
                 }
-
-                // Divide o termo de busca em palavras individuais, ignorando espaços extras
                 const searchWords = searchTerm.split(/\s+/).filter(Boolean);
-
-                // Se não houver palavras (ex: só espaços), não faz nada
                 if (searchWords.length === 0) {
                     renderProducts([]);
                     return;
                 }
-                
-                // Filtra os produtos
                 const filteredProducts = allProducts.filter(product => {
                     const productDesc = product.description.toLowerCase();
-                    // Verifica se TODAS as palavras da busca estão contidas na descrição do produto
                     return searchWords.every(word => productDesc.includes(word));
                 });
-
                 renderProducts(filteredProducts);
             });
 
@@ -401,8 +392,15 @@
             
             const generateQuoteText = () => {
                 if (cart.length === 0) { showMessage("O pedido está vazio."); return null; }
+                
+                const clientName = clientNameInput.value.trim();
                 let subtotal = 0;
-                let text = `*Orçamento*\n\n`;
+                let text = `*Orçamento*\n`;
+                if(clientName) {
+                    text += `*Cliente:* ${clientName}\n`;
+                }
+                text += `\n`;
+
                 cart.forEach(item => {
                     const itemTotal = item.quantity * item.price;
                     subtotal += itemTotal;
@@ -417,58 +415,58 @@
                 return text;
             };
 
-            // --- NOVA FUNÇÃO PARA GERAR PDF ---
             const generatePDF = () => {
                 if (cart.length === 0) {
                     showMessage("O pedido está vazio.");
                     return;
                 }
-
+                const clientName = clientNameInput.value.trim();
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
 
-                let y = 15; // Posição Y inicial
+                let y = 15;
                 const lineHeight = 7;
                 const margin = 10;
                 const pageWidth = doc.internal.pageSize.getWidth();
 
-                // Cabeçalho
                 doc.setFontSize(20);
                 doc.setFont("helvetica", "bold");
                 doc.text("Orçamento", pageWidth / 2, y, { align: 'center' });
                 y += lineHeight * 2;
+                
+                if(clientName){
+                    doc.setFontSize(12);
+                    doc.setFont("helvetica", "normal");
+                    doc.text(`Cliente: ${clientName}`, margin, y);
+                    y += lineHeight * 1.5;
+                }
 
-                // Itens do carrinho
                 let subtotal = 0;
                 cart.forEach(item => {
                     const itemTotal = item.quantity * item.price;
                     subtotal += itemTotal;
-
-                    // Quebra de linha manual para descrição longa
                     const splitDescription = doc.splitTextToSize(item.description, pageWidth - margin * 2);
                     
                     doc.setFontSize(12);
                     doc.setFont("helvetica", "bold");
                     doc.text(splitDescription, margin, y);
-                    y += (splitDescription.length * (lineHeight-2)); // Ajusta o Y baseado no número de linhas
+                    y += (splitDescription.length * (lineHeight-2));
 
                     doc.setFontSize(10);
                     doc.setFont("helvetica", "normal");
                     doc.text(`Fabricante: ${item.manufacturer}`, margin, y);
                     y += lineHeight;
                     doc.text(`Qtd: ${item.quantity} x ${formatCurrency(item.price)} = ${formatCurrency(itemTotal)}`, margin, y);
-                    y += lineHeight * 1.5; // Espaço extra entre os itens
+                    y += lineHeight * 1.5; 
 
-                    // Adiciona nova página se o conteúdo estiver saindo
                     if (y > 280) {
                         doc.addPage();
                         y = 15;
                     }
                 });
 
-                // Seção de Totais
                 y += lineHeight;
-                doc.line(margin, y, pageWidth - margin, y); // Linha separadora
+                doc.line(margin, y, pageWidth - margin, y);
                 y += lineHeight;
 
                 const total = subtotal - globalDiscount;
@@ -492,7 +490,8 @@
                 doc.text(`Total:`, margin, y);
                 doc.text(`${formatCurrency(total > 0 ? total : 0)}`, pageWidth - margin, y, { align: 'right' });
 
-                doc.save('orcamento.pdf');
+                const fileName = clientName ? `orcamento-${clientName.replace(/ /g, "_")}.pdf` : 'orcamento.pdf';
+                doc.save(fileName);
                 showMessage("PDF gerado com sucesso!");
             };
 
@@ -519,10 +518,8 @@
                 }
             });
             
-            // Adiciona o evento de clique para o botão de PDF
             pdfBtn.addEventListener('click', generatePDF);
 
-            // --- LÓGICA DA SENHA ---
             const checkPassword = () => {
                 if (passwordInput.value === '777') {
                     passwordModal.style.display = 'none';
@@ -545,4 +542,5 @@
     </script>
 </body>
 </html>
+
 
