@@ -64,6 +64,10 @@
                          <label for="discount-input" class="text-gray-600">Desconto (R$):</label>
                          <input type="number" id="discount-input" placeholder="0.00" class="w-24 text-right border rounded-md p-1">
                      </div>
+                     <div class="flex justify-between items-center mb-2">
+                        <label for="discount-percentage-input" class="text-gray-600">Desconto (%):</label>
+                        <input type="number" id="discount-percentage-input" placeholder="0" class="w-24 text-right border rounded-md p-1">
+                    </div>
                     <div id="cart-total" class="flex justify-between items-center font-bold text-xl">
                         <span>Total:</span>
                         <strong id="total-value">R$ 0,00</strong>
@@ -144,6 +148,7 @@
             const cartItemsElement = document.getElementById('cart-items');
             const totalValueElement = document.getElementById('total-value');
             const discountInput = document.getElementById('discount-input');
+            const discountPercentageInput = document.getElementById('discount-percentage-input');
             const clientNameInput = document.getElementById('client-name'); // Referência para o novo campo
             const whatsappNumberInput = document.getElementById('whatsapp-number');
             const whatsappBtn = document.getElementById('whatsapp-btn');
@@ -168,12 +173,14 @@
             let currentModalProduct = null;
             let currentEditIndex = null;
             let globalDiscount = 0;
+            let globalDiscountPercentage = 0;
             
             // --- Persistência de Dados ---
             const saveStateToLocalStorage = () => {
                 const state = {
                     cart: cart,
                     globalDiscount: globalDiscount,
+                    globalDiscountPercentage: globalDiscountPercentage,
                     clientName: clientNameInput.value,
                     whatsappNumber: whatsappNumberInput.value
                 };
@@ -186,9 +193,11 @@
                     const savedState = JSON.parse(savedStateJSON);
                     cart = savedState.cart || [];
                     globalDiscount = savedState.globalDiscount || 0;
+                    globalDiscountPercentage = savedState.globalDiscountPercentage || 0;
                     clientNameInput.value = savedState.clientName || '';
                     whatsappNumberInput.value = savedState.whatsappNumber || '';
                     discountInput.value = globalDiscount || '';
+                    discountPercentageInput.value = globalDiscountPercentage || '';
                     renderCart();
                 }
             };
@@ -319,7 +328,8 @@
                         cartItemsElement.appendChild(li);
                     });
                 }
-                const total = subtotal - globalDiscount;
+                const percentageDiscountValue = subtotal * (globalDiscountPercentage / 100);
+                const total = subtotal - percentageDiscountValue - globalDiscount;
                 totalValueElement.textContent = formatCurrency(total > 0 ? total : 0);
                 saveStateToLocalStorage(); // Salva o estado sempre que o carrinho é renderizado
             };
@@ -461,10 +471,12 @@
             });
             
             clearCartBtn.addEventListener('click', () => {
-                if (cart.length > 0 || globalDiscount > 0 || clientNameInput.value || whatsappNumberInput.value) {
+                if (cart.length > 0 || globalDiscount > 0 || globalDiscountPercentage > 0 || clientNameInput.value || whatsappNumberInput.value) {
                     cart = [];
                     discountInput.value = '';
+                    discountPercentageInput.value = '';
                     globalDiscount = 0;
+                    globalDiscountPercentage = 0;
                     clientNameInput.value = '';
                     whatsappNumberInput.value = '';
                     renderCart(); // This will also save the empty state
@@ -480,6 +492,7 @@
             modalAddBtn.addEventListener('click', handleModalSubmit);
             modalCancelBtn.addEventListener('click', closeModal);
             discountInput.addEventListener('input', () => { globalDiscount = parseFloat(discountInput.value) || 0; renderCart(); });
+            discountPercentageInput.addEventListener('input', () => { globalDiscountPercentage = parseFloat(discountPercentageInput.value) || 0; renderCart(); });
             
             // Salva o nome do cliente e número ao digitar
             clientNameInput.addEventListener('input', saveStateToLocalStorage);
@@ -488,8 +501,8 @@
             const generateQuoteText = () => {
                 if (cart.length === 0) { showMessage("O pedido está vazio."); return null; }
                 
-                const clientName = clientNameInput.value.trim();
                 let subtotal = 0;
+                const clientName = clientNameInput.value.trim();
                 let text = `*Orçamento*\n`;
                 if(clientName) {
                     text += `*Cliente:* ${clientName}\n`;
@@ -503,9 +516,11 @@
                     text += `_Fabricante: ${item.manufacturer}_\n`;
                     text += `_Qtd: ${item.quantity} x ${formatCurrency(item.price)} = ${formatCurrency(itemTotal)}_\n\n`;
                 });
-                const total = subtotal - globalDiscount;
+                const percentageDiscountValue = subtotal * (globalDiscountPercentage / 100);
+                const total = subtotal - percentageDiscountValue - globalDiscount;
                 text += `*Subtotal:* ${formatCurrency(subtotal)}\n`;
-                if(globalDiscount > 0) text += `*Desconto:* -${formatCurrency(globalDiscount)}\n`;
+                if(globalDiscountPercentage > 0) text += `*Desconto (%):* -${formatCurrency(percentageDiscountValue)} (${globalDiscountPercentage}%)\n`;
+                if(globalDiscount > 0) text += `*Desconto (R$):* -${formatCurrency(globalDiscount)}\n`;
                 text += `*Total:* *${formatCurrency(total > 0 ? total : 0)}*`;
                 return text;
             };
@@ -584,7 +599,8 @@
                 doc.line(margin, y, pageWidth - margin, y);
                 y += lineHeight;
 
-                const total = subtotal - globalDiscount;
+                const percentageDiscountValue = subtotal * (globalDiscountPercentage / 100);
+                const total = subtotal - percentageDiscountValue - globalDiscount;
 
                 doc.setFontSize(12);
                 doc.setFont("helvetica", "bold");
@@ -592,9 +608,16 @@
                 doc.text(`${formatCurrency(subtotal)}`, pageWidth - margin, y, { align: 'right' });
                 y += lineHeight;
 
+                if (globalDiscountPercentage > 0) {
+                    doc.setFont("helvetica", "normal");
+                    doc.text(`Desconto (${globalDiscountPercentage}%):`, margin, y);
+                    doc.text(`-${formatCurrency(percentageDiscountValue)}`, pageWidth - margin, y, { align: 'right' });
+                    y += lineHeight;
+                }
+
                 if (globalDiscount > 0) {
                     doc.setFont("helvetica", "normal");
-                    doc.text(`Desconto:`, margin, y);
+                    doc.text(`Desconto (R$):`, margin, y);
                     doc.text(`-${formatCurrency(globalDiscount)}`, pageWidth - margin, y, { align: 'right' });
                     y += lineHeight;
                 }
