@@ -550,8 +550,10 @@
 
                 doc.setFontSize(10);
                 doc.setFont("helvetica", "normal");
-                doc.text("Rua Exemplo, 123 - Centro", margin, y + 5);
-                doc.text("Telefone: (99) 99999-9999", margin, y + 10);
+                doc.text("AVENIDA DOS PIONEIROS, 126-B - CENTRO", margin, y + 5);
+                doc.text("CANAÃ DOS CARAJÁS / PA", margin, y + 10);
+                doc.text("Telefone: (94) 99119-9073", margin, y + 15);
+                doc.text("CNPJ: 41.139.387/0001-14", margin, y + 20);
 
                 doc.setFontSize(12);
                 doc.setFont("helvetica", "bold");
@@ -560,9 +562,9 @@
                 doc.setFontSize(10);
                 doc.setFont("helvetica", "normal");
                 doc.text(`Data: ${dateStr} ${timeStr}`, pageWidth - margin, y + 5, { align: 'right' });
-                y += 20;
+                y += 30; // Aumentado para dar espaço para os novos dados
 
-                doc.line(margin, y, pageWidth - margin, y); // Separator line
+                doc.line(margin, y, pageWidth - margin, y); // Linha separadora
                 y += 10;
                 
                 if(clientName){
@@ -574,7 +576,7 @@
 
                 let subtotal = 0;
                 cart.forEach(item => {
-                    if (y > pageHeight - 40) { // check for footer space
+                    if (y > pageHeight - 40) { // verifica espaço para o rodapé
                         doc.addPage();
                         y = 15;
                     }
@@ -630,7 +632,9 @@
                 // --- PDF Footer ---
                 doc.setFontSize(8);
                 doc.setFont("helvetica", "italic");
-                doc.text("Este orçamento é válido por 7 dias.", margin, pageHeight - 10);
+                const footerText = "Este orçamento pode ter valores atualizados assim que for lançado no sistema por um de nossos vendedores credenciados, pois este documento é uma tabela e pode estar desatualizada.";
+                const splitFooter = doc.splitTextToSize(footerText, pageWidth - margin * 2);
+                doc.text(splitFooter, margin, pageHeight - 15);
 
                 const fileName = clientName ? `orcamento-${clientName.replace(/\s+/g, "_")}.pdf` : 'orcamento.pdf';
                 doc.save(fileName);
